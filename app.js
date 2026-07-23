@@ -114,8 +114,26 @@ function loadPage(page) {
 function initHomePage() {
     const commandInput = document.getElementById("commandInput");
     if (commandInput) {
+        commandInput.addEventListener("keydown", async (event) => {
+            if (event.key === "Enter") {
+                const command = commandInput.value.trim().toLowerCase();
+                commandInput.value = "";
+                
+                if (command) {
+                    await processCommand(command);
+                }
+            }
+        });
         commandInput.focus();
     }
+
+    // Set up quick-start buttons
+    document.querySelectorAll(".quick-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const action = btn.dataset.action;
+            handleQuickStart(action);
+        });
+    });
 }
 
 // Initialize test page
@@ -192,6 +210,26 @@ function showHelp() {
     logMessage("  - manual: Manually enter card data", "info");
     logMessage("  - clear: Clear the terminal log", "info");
     logMessage("  - help: Show this help message", "info");
+}
+
+// Handle quick-start button clicks
+function handleQuickStart(action) {
+    switch (action) {
+        case "test-nfc":
+            processCommand("test");
+            break;
+        case "read-card":
+            processCommand("scan");
+            break;
+        case "write-card":
+            processCommand("clone");
+            break;
+        case "view-guide":
+            loadPage("guide");
+            break;
+        default:
+            logMessage("[ERROR] Unknown quick-start action: " + action, "error");
+    }
 }
 
 // List all saved cards

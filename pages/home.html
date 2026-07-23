@@ -1,7 +1,74 @@
-<div class="log-container" id="logContainer">
-    <div class="log-entry system">[SYSTEM] NFC RING v2.0 initialized.</div>
-    <div class="log-entry system">[SYSTEM] Type 'help' for available commands.</div>
-</div>
-<div class="input-container">
-    <label for="commandInput">Enter command</label><input type="text" id="commandInput" placeholder="> Enter command" autocomplete="off">
+<div class="home-page">
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <h1><i class="fas fa-ring"></i> NFC RING ENCODER</h1>
+        <p>Encode and manage NFC tags with ease</p>
+    </div>
+
+    <!-- Quick Start Section -->
+    <div class="quick-start-section">
+        <h2>Quick Start</h2>
+        <div class="quick-start-buttons">
+            <button class="quick-btn" data-action="test-nfc">
+                <i class="fas fa-bolt"></i>
+                <span>Test NFC</span>
+                <small>Check device compatibility</small>
+            </button>
+            <button class="quick-btn" data-action="read-card">
+                <i class="fas fa-book"></i>
+                <span>Read Card</span>
+                <small>Read NFC card data</small>
+            </button>
+            <button class="quick-btn" data-action="write-card">
+                <i class="fas fa-pen"></i>
+                <span>Write Card</span>
+                <small>Write data to card</small>
+            </button>
+            <button class="quick-btn" data-action="view-guide">
+                <i class="fas fa-question-circle"></i>
+                <span>Learn</span>
+                <small>View guide & tutorials</small>
+            </button>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features-section">
+        <h2>Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-check-circle"></i>
+                <h3>Easy NFC Access</h3>
+                <p>Read and write NFC tags using your device</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-database"></i>
+                <h3>Data Management</h3>
+                <p>Store and organize your NFC card data</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-code"></i>
+                <h3>Advanced Controls</h3>
+                <p>Send custom APDU commands for power users</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-flask"></i>
+                <h3>Testing Tools</h3>
+                <p>Test NFC functionality and diagnose issues</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Terminal Section (for advanced users) -->
+    <div class="terminal-section">
+        <h2>Command Terminal</h2>
+        <p style="margin-bottom: 15px; font-size: 12px; color: var(--text-secondary);">Advanced users can use the terminal for custom commands. Type 'help' for available commands.</p>
+        <div class="log-container" id="logContainer">
+            <div class="log-entry system">[SYSTEM] NFC RING v2.0 initialized.</div>
+            <div class="log-entry system">[SYSTEM] Type 'help' for available commands.</div>
+        </div>
+        <div class="input-container">
+            <label for="commandInput">Enter command</label><input type="text" id="commandInput" placeholder="> Enter command" autocomplete="off">
+        </div>
+    </div>
 </div>
