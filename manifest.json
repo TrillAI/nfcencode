@@ -1,25 +1,38 @@
 {
-    "name": "NFC Ring",
+    "name": "NFC RING - Advanced NFC Encoding",
     "short_name": "NFCRing",
+    "description": "Professional NFC tag encoder with EMV support, TLV parsing, and comprehensive testing",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
+    "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+    "orientation": "portrait-primary",
     "background_color": "#000000",
-    "theme_color": "#000000",
-    "orientation": "portrait",
+    "theme_color": "#ff00ff",
+    "categories": ["productivity", "utilities"],
+    "screenshots": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23000' width='540' height='720'/><text x='270' y='360' font-size='200' fill='%23ff00ff' text-anchor='middle'>💀</text></rect></svg>",
+            "sizes": "540x720",
+            "form_factor": "narrow",
+            "type": "image/svg+xml"
+        }
+    ],
     "icons": [
         {
-            "src": "/assets/icon-192x192.png",
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23000' width='192' height='192'/><text x='96' y='150' font-size='140' fill='%23ff00ff' text-anchor='middle'>💀</text></svg>",
             "sizes": "192x192",
-            "type": "image/png",
+            "type": "image/svg+xml",
             "purpose": "any maskable"
         },
         {
-            "src": "/assets/icon-512x512.png",
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23000' width='512' height='512'/><text x='256' y='400' font-size='360' fill='%23ff00ff' text-anchor='middle'>💀</text></svg>",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
         }
     ],
-    "permissions": ["nfc", "storage"],
+    "permissions": ["nfc", "storage", "geolocation"],
     "related_applications": [],
     "prefer_related_applications": false,
     "iarc_rating_id": "",
@@ -30,11 +43,73 @@
     "edge_side_panel": {
         "preferred_width": 400
     },
-    "display_override": ["window-controls-overlay", "standalone"],
     "protocol_handlers": [
         {
             "protocol": "web+nfcrings",
             "url": "/"
         }
-    ]
+    ],
+    "file_handlers": [
+        {
+            "action": "/",
+            "accept": {
+                "text/plain": [".txt"],
+                "application/json": [".json"]
+            }
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Test NFC",
+            "short_name": "Test",
+            "description": "Test NFC tag compatibility",
+            "url": "/?mode=test",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%23ff00ff' width='96' height='96' rx='20'/><text x='48' y='70' font-size='60' fill='%23000' text-anchor='middle'>⚡</text></svg>",
+                    "sizes": "96x96",
+                    "type": "image/svg+xml"
+                }
+            ]
+        },
+        {
+            "name": "Read Card",
+            "short_name": "Read",
+            "description": "Read NFC card data",
+            "url": "/?mode=read",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%2300aaff' width='96' height='96' rx='20'/><text x='48' y='70' font-size='60' fill='%23000' text-anchor='middle'>📖</text></svg>",
+                    "sizes": "96x96",
+                    "type": "image/svg+xml"
+                }
+            ]
+        },
+        {
+            "name": "Write Card",
+            "short_name": "Write",
+            "description": "Write data to NFC card",
+            "url": "/?mode=write",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%2300ff00' width='96' height='96' rx='20'/><text x='48' y='70' font-size='60' fill='%23000' text-anchor='middle'>✍️</text></svg>",
+                    "sizes": "96x96",
+                    "type": "image/svg+xml"
+                }
+            ]
+        }
+    ],
+    "share_target": {
+        "action": "/share",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "files": [
+                {
+                    "name": "file",
+                    "accept": ["text/*", "application/json"]
+                }
+            ]
+        }
+    }
 }
