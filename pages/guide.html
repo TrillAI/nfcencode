@@ -1,0 +1,453 @@
+<div class="guide-content">
+    <h1>💀 NFC RING USER GUIDE 💀</h1>
+    
+    <h2>📌 OVERVIEW</h2>
+    <p>
+        <strong>NFC Ring</strong> is a <strong>Progressive Web App (PWA)</strong> designed for 
+        <strong>EMV card skimming, cloning, and testing</strong> using <strong>WebNFC</strong>.
+        It works <strong>completely offline</strong> and supports <strong>custom APDU commands</strong>,
+        <strong>preset commands</strong>, and <strong>auto-fill</strong> for payment forms.
+    </p>
+    
+    <h2>⚡ REQUIREMENTS</h2>
+    <ul>
+        <li><strong>Device:</strong> Android 10+ (Chrome 89+) or iOS 15+ (Safari, limited functionality)</li>
+        <li><strong>Browser:</strong> Chrome (recommended) or Safari</li>
+        <li><strong>NFC Tags:</strong> NTAG215 or NTAG216 (for cloning)</li>
+        <li><strong>EMV Cards:</strong> Contactless Visa/Mastercard (for skimming)</li>
+        <li><strong>Internet:</strong> Only required for initial load (works offline after)</li>
+    </ul>
+    
+    <h2>🚀 GETTING STARTED</h2>
+    
+    <h3>1️⃣ Install the App</h3>
+    <p>
+        Open the app in Chrome on Android or Safari on iOS. The browser will prompt you to 
+        <strong>install the PWA</strong>. Accept the prompt to add it to your home screen.
+        <strong>No install button is visible</strong>—it uses the browser's native PWA prompt.
+    </p>
+    
+    <h3>2️⃣ Enable NFC</h3>
+    <p>
+        Ensure NFC is enabled on your device:
+        <ul>
+            <li><strong>Android:</strong> Settings > Connected Devices > NFC</li>
+            <li><strong>iOS:</strong> Settings > NFC (limited to NDEF tags)</li>
+        </ul>
+        For <strong>full EMV functionality</strong>, use <strong>Chrome on Android</strong>.
+    </p>
+    
+    <h3>3️⃣ Enable Chrome Flags (Android Only)</h3>
+    <p>
+        For <strong>raw EMV reading</strong>, enable WebNFC in Chrome:
+        <ol>
+            <li>Open Chrome and go to: <code>chrome://flags/#enable-experimental-web-platform-features</code></li>
+            <li>Enable the flag: <strong>Experimental Web Platform features</strong></li>
+            <li>Restart Chrome</li>
+        </ol>
+    </p>
+    
+    <h2>🔧 COMMANDS</h2>
+    <p>
+        The app uses a <strong>terminal-style interface</strong>. Type the following commands in the input field:
+    </p>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Command</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>help</code></td>
+                <td>Show this help message</td>
+            </tr>
+            <tr>
+                <td><code>scan</code></td>
+                <td>Scan an EMV card (hold card near device)</td>
+            </tr>
+            <tr>
+                <td><code>clone</code></td>
+                <td>Clone the last scanned card to an NTAG215/216 tag</td>
+            </tr>
+            <tr>
+                <td><code>test</code></td>
+                <td>Test a cloned tag (check if it works as a payment card)</td>
+            </tr>
+            <tr>
+                <td><code>autofill on</code></td>
+                <td>Enable auto-fill for payment forms</td>
+            </tr>
+            <tr>
+                <td><code>autofill off</code></td>
+                <td>Disable auto-fill</td>
+            </tr>
+            <tr>
+                <td><code>list</code></td>
+                <td>List all saved cards</td>
+            </tr>
+            <tr>
+                <td><code>clear</code></td>
+                <td>Clear the terminal log</td>
+            </tr>
+            <tr>
+                <td><code>generate</code></td>
+                <td>Generate a test card for encoding</td>
+            </tr>
+            <tr>
+                <td><code>manual</code></td>
+                <td>Manually enter card data</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h2>💳 SKIMMING EMV CARDS</h2>
+    <p>
+        To skim an EMV card:
+        <ol>
+            <li>Type <code>scan</code> and press Enter.</li>
+            <li>Hold the <strong>contactless EMV card</strong> near the back of your device.</li>
+            <li>The app will read the card data and display it in the terminal.</li>
+            <li>The card data is <strong>automatically saved</strong> for later use.</li>
+        </ol>
+    </p>
+    
+    <div class="code-block">
+> scan
+[NFC] Scanning for EMV card...
+[NFC] Tag detected (UID: A1 B2 C3 D4)
+[NFC] EMV data read successfully!
+[DATA] PAN: 411111******1111
+[DATA] Expiry: 12/25
+[DATA] UID: A1B2C3D4
+[STORAGE] Card saved successfully!
+    </div>
+    
+    <h2>🔄 CLONING CARDS TO NTAG215/216</h2>
+    <p>
+        To clone a card to an NFC tag:
+        <ol>
+            <li>Ensure you have a <strong>blank NTAG215 or NTAG216 tag</strong> (NTAG213 will NOT work).</li>
+            <li>Type <code>clone</code> and press Enter.</li>
+            <li>Hold the <strong>NTAG215/216 tag</strong> near the device.</li>
+            <li>The app will write the EMV data to the tag.</li>
+            <li>Once complete, the tag can be used for <strong>tap-to-pay</strong> (if the terminal accepts it).</li>
+        </ol>
+    </p>
+    
+    <div class="warning-box">
+        <strong>⚠️ IMPORTANT:</strong>
+        <ul>
+            <li><strong>NTAG213 does NOT support ISO 14443-4 Type A emulation</strong> (required for EMV). Use <strong>NTAG215 or NTAG216</strong>.</li>
+            <li>Some POS terminals may reject cloned tags due to <strong>security checks</strong> (e.g., dynamic CVC, transaction counters).</li>
+            <li>Test on <strong>older terminals</strong> or <strong>offline POS systems</strong> for best results.</li>
+        </ul>
+    </div>
+    
+    <h2>🧪 TESTING CLONED TAGS</h2>
+    <p>
+        To test if a cloned tag works:
+        <ol>
+            <li>Type <code>test</code> and press Enter.</li>
+            <li>Hold the <strong>cloned NTAG215/216 tag</strong> near the device.</li>
+            <li>The app will verify the tag's data and display the results.</li>
+        </ol>
+    </p>
+    
+    <div class="code-block">
+> test
+[NFC] Hold cloned tag near device...
+[NFC] Tag detected (UID: A1B2C3D4)
+[TEST] PAN: 411111******1111 ✅
+[TEST] Expiry: 12/25 ✅
+[TEST] Track 2 Data: Present ✅
+[TEST] Result: <span style="color: var(--success-color)">TAG IS PAYMENT-READY!</span>
+    </div>
+    
+    <h2>🔧 TROUBLESHOOTING CLONING ISSUES</h2>
+    
+    <h3>❌ Tag Not Detected</h3>
+    <p>
+        <strong>Possible Causes:</strong>
+        <ul>
+            <li>Tag is <strong>not NTAG215/216</strong> (NTAG213 will not work).</li>
+            <li>Tag is <strong>locked</strong> (write-protected).</li>
+            <li>Tag is <strong>too far</strong> from the device.</li>
+        </ul>
+        <strong>Solutions:</strong>
+        <ul>
+            <li>Use a <strong>new NTAG215/216 tag</strong>.</li>
+            <li>Check if the tag is <strong>rewritable</strong> (some tags are locked by default).</li>
+            <li>Hold the tag <strong>closer</strong> to the device.</li>
+        </ul>
+    </p>
+    
+    <h3>❌ Cloning Fails</h3>
+    <p>
+        <strong>Possible Causes:</strong>
+        <ul>
+            <li>Tag is <strong>not blank</strong> (contains old data).</li>
+            <li>Tag is <strong>damaged</strong>.</li>
+            <li>NFC is <strong>disabled</strong> on the device.</li>
+        </ul>
+        <strong>Solutions:</strong>
+        <ul>
+            <li>Use a <strong>fresh NTAG215/216 tag</strong>.</li>
+            <li>Enable <strong>NFC</strong> on your device.</li>
+            <li>Restart the app and try again.</li>
+        </ul>
+    </p>
+    
+    <h3>❌ Tap-to-Pay Not Working</h3>
+    <p>
+        <strong>Possible Causes:</strong>
+        <ul>
+            <li>POS terminal <strong>rejects cloned tags</strong> (security checks).</li>
+            <li>Tag is <strong>not properly encoded</strong>.</li>
+            <li>Missing <strong>required EMV data</strong> (e.g., ATC, cryptograms).</li>
+        </ul>
+        <strong>Solutions:</strong>
+        <ul>
+            <li>Try a <strong>different POS terminal</strong> (older terminals work better).</li>
+            <li>Use the <strong>test command</strong> to verify the tag data.</li>
+            <li>For <strong>better compatibility</strong>, use the <strong>APDU tool</strong> to manually adjust EMV data.</li>
+        </ul>
+    </p>
+    
+    <h2>📝 MANUAL CARD ENTRY</h2>
+    <p>
+        If you don't have a physical card to scan, you can manually enter card data:
+        <ol>
+            <li>Type <code>manual</code> and press Enter.</li>
+            <li>Fill in the card details (PAN, expiry, etc.).</li>
+            <li>The app will <strong>auto-generate missing fields</strong> (e.g., UID, ATC).</li>
+            <li>Save the card and clone it to a tag.</li>
+        </ol>
+    </p>
+    
+    <h2>🎯 GENERATING TEST CARDS</h2>
+    <p>
+        The app includes <strong>predefined test cards</strong> for testing:
+        <ol>
+            <li>Type <code>generate</code> and press Enter.</li>
+            <li>Select a test card (e.g., Visa Test Card, Mastercard Test Card).</li>
+            <li>The app will generate a <strong>valid test card</strong> that can be cloned to a tag.</li>
+        </ol>
+    </p>
+    
+    <div class="code-block">
+> generate
+[GENERATE] Select test card type:
+[GENERATE] 1. Visa Test Card (4111111111111111)
+[GENERATE] 2. Mastercard Test Card (5555555555554444)
+[GENERATE] 3. Amex Test Card (378282246310005)
+[GENERATE] Enter choice (1-3): 1
+[GENERATE] Test card generated (PAN: 4111111111111111, Expiry: 12/25)
+[STORAGE] Card saved successfully!
+    </div>
+    
+    <h2>🔐 AUTO-FILL FOR PAYMENT FORMS</h2>
+    <p>
+        Enable auto-fill to automatically fill payment forms with cloned card data:
+        <ol>
+            <li>Type <code>autofill on</code> and press Enter.</li>
+            <li>Open a <strong>payment form</strong> (e.g., Stripe test page).</li>
+            <li>Focus on a <strong>card number field</strong>—the app will auto-fill the details.</li>
+        </ol>
+    </p>
+    
+    <div class="warning-box">
+        <strong>⚠️ NOTE:</strong>
+        <ul>
+            <li>Auto-fill works best on <strong>unprotected payment forms</strong>.</li>
+            <li>Some websites may <strong>block auto-fill</strong> for security reasons.</li>
+        </ul>
+    </div>
+    
+    <h2>🛠️ ADVANCED APDU COMMANDS</h2>
+    <p>
+        For advanced users, the <strong>APDU tool</strong> allows sending custom commands to NFC tags:
+        <ol>
+            <li>Go to the <strong>APDU</strong> tab.</li>
+            <li>Enter a <strong>custom APDU command</strong> (e.g., <code>00A404000E325041592E5359532E4444463031</code>).</li>
+            <li>Hold an NFC tag near the device.</li>
+            <li>View the <strong>response</strong> and <strong>interpretation</strong>.</li>
+        </ol>
+    </p>
+    
+    <h3>Preset APDU Commands</h3>
+    <p>
+        The app includes <strong>preset APDU commands</strong> for common EMV operations:
+    </p>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Command</th>
+                <th>Description</th>
+                <th>Expected Response</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>00A404000E325041592E5359532E4444463031</code></td>
+                <td>Select PPSE (Payment System Environment)</td>
+                <td>PPSE data (e.g., <code>6F 10 84 0E 32 50 41 59 2E 53 59 53 2E 44 44 46 30 31 A5 08 88 01 02 90 00</code>)</td>
+            </tr>
+            <tr>
+                <td><code>00A4040007A000000025010101</code></td>
+                <td>Select Visa Application</td>
+                <td>Application data (e.g., <code>6F 10 84 07 A0 00 00 00 25 01 01 A5 05 9F 36 01 01 90 00</code>)</td>
+            </tr>
+            <tr>
+                <td><code>80CA9F7F00</code></td>
+                <td>Read PDOL (Processing Data Object List)</td>
+                <td>PDOL data (e.g., <code>80 0A 9F 02 06 9F 1A 02 9F 36 02 90 00</code>)</td>
+            </tr>
+            <tr>
+                <td><code>80CA9F5A00</code></td>
+                <td>Read PAN (Primary Account Number)</td>
+                <td>PAN (e.g., <code>01 10 41 11 11 11 11 11 11 11 11 9F 36 01 01 90 00</code>)</td>
+            </tr>
+            <tr>
+                <td><code>80CA9F2400</code></td>
+                <td>Read Expiry Date</td>
+                <td>Expiry (e.g., <code>12 25 90 00</code>)</td>
+            </tr>
+            <tr>
+                <td><code>80CA9F3600</code></td>
+                <td>Read ATC (Application Transaction Counter)</td>
+                <td>ATC (e.g., <code>00 10 90 00</code>)</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h3>APDU Response Interpretation</h3>
+    <p>
+        APDU responses include <strong>status words (SW1/SW2)</strong> that indicate success or failure:
+    </p>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>SW1/SW2</th>
+                <th>Meaning</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>90 00</code></td>
+                <td><strong>Success</strong> - Command executed successfully.</td>
+            </tr>
+            <tr>
+                <td><code>6A 82</code></td>
+                <td><strong>File not found</strong> - The requested file or data object does not exist.</td>
+            </tr>
+            <tr>
+                <td><code>6A 81</code></td>
+                <td><strong>Function not supported</strong> - The command is not supported by the tag.</td>
+            </tr>
+            <tr>
+                <td><code>6A 86</code></td>
+                <td><strong>Incorrect P1/P2</strong> - Parameters are invalid.</td>
+            </tr>
+            <tr>
+                <td><code>69 85</code></td>
+                <td><strong>Conditions not satisfied</strong> - Tag is locked or in an invalid state.</td>
+            </tr>
+            <tr>
+                <td><code>63 00</code></td>
+                <td><strong>Verification failed</strong> - Authentication or verification failed.</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h2>📚 ADDITIONAL RESOURCES</h2>
+    <p>
+        Learn more about EMV and NFC:
+        <ul>
+            <li><a href="https://www.emvco.com/" target="_blank" style="color: var(--text-info)">EMVCo Official Website</a></li>
+            <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_NFC_API" target="_blank" style="color: var(--text-info)">WebNFC API Documentation</a></li>
+            <li><a href="https://www.nxp.com/docs/en/application-note/AN10927.pdf" target="_blank" style="color: var(--text-info)">NTAG21x Datasheet (NXP)</a></li>
+        </ul>
+    </p>
+    
+    <h2>⚠️ LEGAL DISCLAIMER</h2>
+    <p style="color: var(--text-error);">
+        <strong>NFC Ring</strong> is provided for <strong>educational and testing purposes only</strong>.
+        Unauthorized use of this tool to clone or skim payment cards that you do not own 
+        is <strong>illegal</strong> and may violate local, state, and federal laws.
+        The developers of this tool are <strong>not responsible</strong> for any misuse or 
+        illegal activities performed with it. Use at your own risk.
+    </p>
+</div>
+
+<style>
+    .guide-content {
+        padding: 15px;
+    }
+    
+    .guide-content h1, .guide-content h2, .guide-content h3 {
+        color: var(--text-error);
+        margin-bottom: 10px;
+    }
+    
+    .guide-content h1 {
+        font-size: 24px;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+    }
+    
+    .guide-content h2 {
+        font-size: 18px;
+        margin-top: 20px;
+    }
+    
+    .guide-content h3 {
+        font-size: 14px;
+        margin-top: 15px;
+    }
+    
+    .guide-content p, .guide-content li {
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+        line-height: 1.5;
+    }
+    
+    .guide-content ul, .guide-content ol {
+        margin-left: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .guide-content code {
+        background-color: var(--bg-darker);
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-family: 'Share Tech Mono', monospace;
+        color: var(--text-info);
+    }
+    
+    .guide-content a {
+        color: var(--text-info);
+        text-decoration: none;
+    }
+    
+    .guide-content a:hover {
+        text-decoration: underline;
+    }
+    
+    .warning-box {
+        background-color: rgba(255, 255, 0, 0.1);
+        border: 1px solid var(--warning-color);
+        border-radius: 5px;
+        padding: 10px;
+        margin: 15px 0;
+        color: var(--text-warning);
+    }
+    
+    .warning-box strong {
+        color: var(--text-error);
+    }
+</style>

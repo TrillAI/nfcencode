@@ -1,0 +1,553 @@
+<div class="apdu-container">
+    <h2>🔧 APDU COMMAND TOOL</h2>
+    <p class="apdu-description">
+        Send custom APDU commands to NFC tags and view responses. 
+        Useful for debugging and advanced EMV operations.
+    </p>
+    
+    <div class="apdu-presets">
+        <h3>📋 Preset Commands</h3>
+        <div class="preset-buttons">
+            <button class="btn btn-primary preset-btn" data-command="00A404000E325041592E5359532E4444463031">
+                <i class="fas fa-credit-card"></i> SELECT PPSE
+            </button>
+            <button class="btn btn-primary preset-btn" data-command="00A4040007A000000025010101">
+                <i class="fas fa-cc-visa"></i> SELECT VISA
+            </button>
+            <button class="btn btn-primary preset-btn" data-command="00A4040007A0000000041010">
+                <i class="fas fa-cc-mastercard"></i> SELECT MASTERCARD
+            </button>
+            <button class="btn btn-primary preset-btn" data-command="80CA9F7F00">
+                <i class="fas fa-list"></i> READ PDOL
+            </button>
+            <button class="btn btn-primary preset-btn" data-command="80CA9F5A00">
+                <i class="fas fa-user"></i> READ PAN
+            </button>
+            <button class="btn btn-primary preset-btn" data-command="80CA9F2400">
+                <i class="fas fa-calendar"></i> READ EXPIRY
+            </button>
+            <button class="btn btn-primary preset-btn" data-command="80CA9F3600">
+                <i class="fas fa-clock"></i> READ ATC
+            </button>
+            <button class="btn btn-primary preset-btn" data-command="80CA9F2000">
+                <i class="fas fa-tag"></i> READ CARDHOLDER NAME
+            </button>
+        </div>
+    </div>
+    
+    <div class="apdu-custom">
+        <h3>🔨 Custom APDU Command</h3>
+        <div class="form-group">
+            <label for="apduCommand">APDU Command (Hex):</label>
+            <input type="text" id="apduCommand" placeholder="e.g., 00A404000E325041592E5359532E4444463031">
+        </div>
+        <div class="form-group">
+            <label for="apduDescription">Description (Optional):</label>
+            <input type="text" id="apduDescription" placeholder="e.g., Select PPSE">
+        </div>
+        <button id="sendApduBtn" class="btn btn-primary">
+            <i class="fas fa-paper-plane"></i> SEND COMMAND
+        </button>
+        <button id="clearApduBtn" class="btn btn-warning">
+            <i class="fas fa-eraser"></i> CLEAR
+        </button>
+    </div>
+    
+    <div class="apdu-response-container">
+        <h3>📥 APDU Response</h3>
+        <div id="apduResponse" class="apdu-response">
+            <p class="apdu-placeholder">No response yet. Send a command to see results.</p>
+        </div>
+    </div>
+    
+    <div class="apdu-history">
+        <h3>📜 Command History</h3>
+        <div id="apduHistory" class="apdu-history-list">
+            <p class="apdu-placeholder">No commands sent yet.</p>
+        </div>
+        <button id="clearHistoryBtn" class="btn btn-warning">
+            <i class="fas fa-trash"></i> CLEAR HISTORY
+        </button>
+    </div>
+    
+    <div class="apdu-reference">
+        <h3>📚 APDU Reference</h3>
+        <p>
+            Common APDU commands and their meanings:
+        </p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                    <th>Expected Response</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>00A40400</code></td>
+                    <td>SELECT FILE</td>
+                    <td>File data or error</td>
+                </tr>
+                <tr>
+                    <td><code>80CAXXXX</code></td>
+                    <td>GET DATA</td>
+                    <td>Data for tag XXXX</td>
+                </tr>
+                <tr>
+                    <td><code>00B0XXXX</code></td>
+                    <td>READ BINARY</td>
+                    <td>Binary data</td>
+                </tr>
+                <tr>
+                    <td><code>00D6XXXX</code></td>
+                    <td>UPDATE BINARY</td>
+                    <td>Success/failure</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h4>Status Words (SW1/SW2)</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>SW1/SW2</th>
+                    <th>Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>90 00</code></td>
+                    <td><strong>Success</strong> - Command executed successfully.</td>
+                </tr>
+                <tr>
+                    <td><code>6A 82</code></td>
+                    <td><strong>File not found</strong> - The requested file does not exist.</td>
+                </tr>
+                <tr>
+                    <td><code>6A 81</code></td>
+                    <td><strong>Function not supported</strong> - The command is not supported.</td>
+                </tr>
+                <tr>
+                    <td><code>6A 86</code></td>
+                    <td><strong>Incorrect P1/P2</strong> - Parameters are invalid.</td>
+                </tr>
+                <tr>
+                    <td><code>69 85</code></td>
+                    <td><strong>Conditions not satisfied</strong> - Tag is locked or in an invalid state.</td>
+                </tr>
+                <tr>
+                    <td><code>63 00</code></td>
+                    <td><strong>Verification failed</strong> - Authentication failed.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="apduModal" class="modal">
+    <div class="modal-content animate__animated animate__fadeIn">
+        <h2 id="apduModalTitle">SENDING APDU COMMAND</h2>
+        <p id="apduModalText">Hold NFC tag near device...</p>
+        <div class="progress-bar">
+            <div class="progress-fill" id="apduProgress"></div>
+        </div>
+        <button id="cancelApduBtn" class="modal-btn">
+            <i class="fas fa-times"></i> CANCEL
+        </button>
+    </div>
+</div>
+
+<style>
+    .apdu-container {
+        padding: 15px;
+    }
+    
+    .apdu-description {
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+    
+    .apdu-presets {
+        background-color: var(--bg-darker);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .apdu-presets h3 {
+        color: var(--text-info);
+        margin-bottom: 10px;
+    }
+    
+    .preset-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .preset-btn {
+        flex: 1;
+        min-width: 120px;
+        font-size: 11px;
+        white-space: nowrap;
+    }
+    
+    .apdu-custom {
+        background-color: var(--bg-darker);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .apdu-custom h3 {
+        color: var(--text-info);
+        margin-bottom: 10px;
+    }
+    
+    .apdu-response-container {
+        background-color: var(--bg-darker);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .apdu-response-container h3 {
+        color: var(--text-info);
+        margin-bottom: 10px;
+    }
+    
+    .apdu-response {
+        min-height: 100px;
+        background-color: var(--bg-darker);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 10px;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        overflow-x: auto;
+    }
+    
+    .apdu-placeholder {
+        color: var(--text-secondary);
+        font-style: italic;
+    }
+    
+    .apdu-history {
+        background-color: var(--bg-darker);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 15px;
+    }
+    
+    .apdu-history h3 {
+        color: var(--text-info);
+        margin-bottom: 10px;
+    }
+    
+    .apdu-history-list {
+        min-height: 100px;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+    }
+    
+    .apdu-history-item {
+        background-color: var(--bg-dark);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 8px;
+        margin-bottom: 8px;
+        font-size: 12px;
+    }
+    
+    .apdu-history-item .command {
+        color: var(--text-primary);
+        margin-bottom: 5px;
+    }
+    
+    .apdu-history-item .response {
+        color: var(--text-secondary);
+        font-size: 11px;
+    }
+    
+    .apdu-reference {
+        margin-top: 20px;
+        background-color: rgba(0, 0, 255, 0.05);
+        border: 1px solid var(--text-info);
+        border-radius: 5px;
+        padding: 15px;
+    }
+    
+    .apdu-reference h3 {
+        color: var(--text-info);
+        margin-bottom: 10px;
+    }
+    
+    .apdu-reference h4 {
+        color: var(--text-secondary);
+        margin: 15px 0 10px 0;
+    }
+    
+    .apdu-reference p {
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+        line-height: 1.5;
+    }
+    
+    .apdu-reference table {
+        margin-bottom: 15px;
+    }
+    
+    .apdu-reference code {
+        background-color: var(--bg-darker);
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-family: 'Share Tech Mono', monospace;
+        color: var(--text-info);
+    }
+</style>
+
+<script>
+    // APDU Command Tool
+    let apduReader;
+    let apduHistory = [];
+    
+    // Load history from storage
+    loadAPDUHistory();
+    
+    // Preset Buttons
+    document.querySelectorAll(".preset-btn").forEach(button => {
+        button.addEventListener("click", () => {
+            const command = button.dataset.command;
+            document.getElementById("apduCommand").value = command;
+            document.getElementById("apduDescription").value = button.textContent.trim();
+        });
+    });
+    
+    // Send APDU Button
+    document.getElementById("sendApduBtn").addEventListener("click", sendAPDUCommand);
+    
+    // Clear Button
+    document.getElementById("clearApduBtn").addEventListener("click", () => {
+        document.getElementById("apduCommand").value = "";
+        document.getElementById("apduDescription").value = "";
+        document.getElementById("apduResponse").innerHTML = '<p class="apdu-placeholder">No response yet. Send a command to see results.</p>';
+    });
+    
+    // Clear History Button
+    document.getElementById("clearHistoryBtn").addEventListener("click", () => {
+        apduHistory = [];
+        updateAPDUHistory();
+        saveAPDUHistory();
+    });
+    
+    // Cancel APDU Button
+    document.getElementById("cancelApduBtn").addEventListener("click", cancelAPDU);
+    
+    // Send APDU Command
+    function sendAPDUCommand() {
+        const command = document.getElementById("apduCommand").value.trim();
+        const description = document.getElementById("apduDescription").value.trim();
+        
+        if (!command) {
+            showToast("Please enter an APDU command.", "error");
+            return;
+        }
+        
+        if (!('NDEFReader' in window)) {
+            showToast("WebNFC not supported in this browser.", "error");
+            return;
+        }
+        
+        showAPDUModal("Sending APDU Command...");
+        updateAPDUProgress(10);
+        
+        apduReader = new NDEFReader();
+        apduReader.scan()
+            .then(() => {
+                updateAPDUProgress(30);
+                logMessage(`[APDU] Waiting for tag... Command: ${command}`, "apdu");
+                
+                apduReader.onreading = async (event) => {
+                    const tag = event.tag;
+                    updateAPDUProgress(50);
+                    logMessage(`[APDU] Tag detected (UID: ${arrayToHex(tag.id)})`, "apdu");
+                    
+                    try {
+                        // Send APDU command
+                        updateAPDUProgress(70);
+                        const response = await sendAPDU(tag, command);
+                        
+                        // Process response
+                        updateAPDUProgress(90);
+                        const responseHex = arrayToHex(response);
+                        const sw1 = response[response.length - 2].toString(16).padStart(2, '0');
+                        const sw2 = response[response.length - 1].toString(16).padStart(2, '0');
+                        const status = getAPDUStatus(sw1, sw2);
+                        
+                        // Display response
+                        displayAPDUResponse(command, description, responseHex, sw1, sw2, status);
+                        
+                        // Add to history
+                        apduHistory.unshift({
+                            command,
+                            description,
+                            response: responseHex,
+                            sw1,
+                            sw2,
+                            status,
+                            timestamp: new Date().toISOString()
+                        });
+                        updateAPDUHistory();
+                        saveAPDUHistory();
+                        
+                        updateAPDUProgress(100);
+                        hideAPDUModal();
+                        apduReader.stopScan();
+                    } catch (error) {
+                        displayAPDUResponse(command, description, null, null, null, `Error: ${error}`);
+                        hideAPDUModal();
+                        apduReader.stopScan();
+                    }
+                };
+            })
+            .catch((error) => {
+                showToast(`Scan error: ${error}`, "error");
+                hideAPDUModal();
+            });
+    }
+    
+    function cancelAPDU() {
+        if (apduReader) {
+            apduReader.stopScan();
+        }
+        hideAPDUModal();
+    }
+    
+    function showAPDUModal(message) {
+        document.getElementById("apduModal").style.display = "flex";
+        document.getElementById("apduModalText").textContent = message;
+        document.getElementById("apduProgress").style.width = "0%";
+    }
+    
+    function hideAPDUModal() {
+        document.getElementById("apduModal").style.display = "none";
+    }
+    
+    function updateAPDUProgress(percent) {
+        document.getElementById("apduProgress").style.width = `${percent}%`;
+    }
+    
+    // Send APDU command to tag
+    async function sendAPDU(tag, apduHex) {
+        const apdu = hexToBytes(apduHex);
+        const response = await tag.transceive(apdu);
+        if (response.length < 2) {
+            throw new Error(`APDU ${apduHex} failed (no response)`);
+        }
+        return response;
+    }
+    
+    // Display APDU response
+    function displayAPDUResponse(command, description, responseHex, sw1, sw2, status) {
+        const responseContainer = document.getElementById("apduResponse");
+        
+        if (responseHex) {
+            responseContainer.innerHTML = `
+                <div class="apdu-response-item">
+                    <strong>Command:</strong> <code>${command}</code>
+                    ${description ? `<br><strong>Description:</strong> ${description}` : ''}
+                </div>
+                <div class="apdu-response-item">
+                    <strong>Response:</strong> <code>${responseHex}</code>
+                </div>
+                <div class="apdu-response-item">
+                    <strong>SW1/SW2:</strong> <code>${sw1} ${sw2}</code>
+                </div>
+                <div class="apdu-response-item">
+                    <strong>Status:</strong> <span style="color: ${status.includes('Success') ? 'var(--success-color)' : status.includes('Error') ? 'var(--error-color)' : 'var(--warning-color)'};">${status}</span>
+                </div>
+            `;
+        } else {
+            responseContainer.innerHTML = `
+                <div class="apdu-response-item" style="color: var(--error-color);">
+                    <strong>Error:</strong> ${status}
+                </div>
+            `;
+        }
+    }
+    
+    // Update APDU history
+    function updateAPDUHistory() {
+        const historyContainer = document.getElementById("apduHistory");
+        
+        if (apduHistory.length === 0) {
+            historyContainer.innerHTML = '<p class="apdu-placeholder">No commands sent yet.</p>';
+            return;
+        }
+        
+        historyContainer.innerHTML = apduHistory.map(item => `
+            <div class="apdu-history-item">
+                <div class="command">
+                    <strong>${item.description || item.command}</strong>
+                    <span style="float: right; font-size: 10px; color: var(--text-info);">${new Date(item.timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div class="response">
+                    <code>${item.command}</code><br>
+                    <strong>Response:</strong> <code>${item.response || 'Error'}</code><br>
+                    <strong>Status:</strong> <span style="color: ${item.status.includes('Success') ? 'var(--success-color)' : item.status.includes('Error') ? 'var(--error-color)' : 'var(--warning-color)'};">${item.status}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // Save APDU history to localStorage
+    function saveAPDUHistory() {
+        localStorage.setItem('apduHistory', JSON.stringify(apduHistory));
+    }
+    
+    // Load APDU history from localStorage
+    function loadAPDUHistory() {
+        const history = localStorage.getItem('apduHistory');
+        if (history) {
+            apduHistory = JSON.parse(history);
+            updateAPDUHistory();
+        }
+    }
+    
+    // Get APDU status from SW1/SW2
+    function getAPDUStatus(sw1, sw2) {
+        const statusMap = {
+            '9000': 'Success - Command executed successfully',
+            '6a82': 'Error - File not found',
+            '6a81': 'Error - Function not supported',
+            '6a86': 'Error - Incorrect P1/P2 parameters',
+            '6985': 'Error - Conditions not satisfied (tag locked)',
+            '6300': 'Error - Verification failed',
+            '6a88': 'Error - Data not found',
+            '6a84': 'Error - Not enough memory',
+            '6a80': 'Error - Incorrect data',
+            '6e00': 'Error - Class not supported'
+        };
+        
+        const key = (sw1 + sw2).toLowerCase();
+        return statusMap[key] || `Unknown status: ${sw1} ${sw2}`;
+    }
+    
+    // Helper: Hex to Bytes
+    function hexToBytes(hex) {
+        return new Uint8Array(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
+    }
+    
+    // Helper: Array to Hex
+    function arrayToHex(arr) {
+        return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    }
+</script>

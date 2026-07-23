@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>💀 NFC RING 💀</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@webnfc/webnfc@0.1.0/dist/webnfc.min.js"></script>
+</head>
+<body>
+    <div id="loadingScreen" class="loading-screen">
+        <div class="spinner">
+            <div class="bounce1"></div>
+            <div class="bounce2"></div>
+            <div class="bounce3"></div>
+        </div>
+        <p>INITIALIZING NFC RING...</p>
+    </div>
+
+    <div id="appContainer" style="display: none;">
+        <div class="terminal-header">
+            <div class="header-left">
+                <span class="header-title">💀 <span id="pageTitle">NFC RING</span> 💀</span>
+            </div>
+            <div class="header-right">
+                <span class="header-subtitle" id="connectionStatus">[OFFLINE]</span>
+                <span class="header-subtitle" id="nfcStatus">[NFC: CHECKING...]</span>
+                <span class="header-subtitle" id="timeDisplay"></span>
+            </div>
+        </div>
+
+        <div class="terminal-nav">
+            <button class="nav-btn active" data-page="home"><i class="fas fa-terminal"></i> TERMINAL</button>
+            <button class="nav-btn" data-page="guide"><i class="fas fa-book"></i> GUIDE</button>
+            <button class="nav-btn" data-page="test"><i class="fas fa-vial"></i> TEST</button>
+            <button class="nav-btn" data-page="apdu"><i class="fas fa-code"></i> APDU</button>
+            <button class="nav-btn" data-page="cards"><i class="fas fa-credit-card"></i> CARDS</button>
+        </div>
+
+        <div class="terminal-body" id="pageContent"></div>
+    </div>
+
+    <div id="nfcModal" class="modal">
+        <div class="modal-content animate__animated animate__fadeIn">
+            <h2 id="nfcModalTitle">NFC OPERATION</h2>
+            <p id="nfcModalText">Hold card/tag near device...</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="nfcProgress"></div>
+            </div>
+            <button id="cancelNfcBtn" class="modal-btn"><i class="fas fa-times"></i> CANCEL</button>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="storage.js"></script>
+    <script src="nfc.js"></script>
+    <script src="autofill.js"></script>
+    <script src="test.js"></script>
+    <script src="apdu.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,430 @@
+<div class="test-container">
+    <h2>🧪 NFC TAG TESTER</h2>
+    <p class="test-description">
+        Test if a cloned NTAG215/216 tag is properly encoded and ready for tap-to-pay.
+    </p>
+    
+    <div class="test-steps">
+        <h3>📋 Steps:</h3>
+        <ol>
+            <li>Hold the cloned NTAG215/216 tag near the device.</li>
+            <li>Click the <strong>Test Tag</strong> button below.</li>
+            <li>Wait for the app to read and verify the tag data.</li>
+        </ol>
+    </div>
+    
+    <div class="test-actions">
+        <button id="testTagBtn" class="btn btn-primary">
+            <i class="fas fa-vial"></i> TEST TAG
+        </button>
+        <button id="clearTestBtn" class="btn btn-warning">
+            <i class="fas fa-eraser"></i> CLEAR RESULTS
+        </button>
+    </div>
+    
+    <div id="testResults" class="test-results">
+        <h3>📊 Test Results</h3>
+        <div id="testResultContainer" class="test-result-container">
+            <p class="test-placeholder">No test results yet. Test a tag to see results.</p>
+        </div>
+    </div>
+    
+    <div class="test-troubleshooting">
+        <h3>⚠️ Troubleshooting</h3>
+        <p>
+            If your tag fails the test, try the following:
+        </p>
+        <ul>
+            <li>
+                <strong>Use NTAG215/216:</strong> NTAG213 does NOT support ISO 14443-4 Type A emulation.
+            </li>
+            <li>
+                <strong>Check Tag Memory:</strong> Ensure the tag has enough memory for EMV data.
+            </li>
+            <li>
+                <strong>Re-clone the Card:</strong> Try cloning the card again to the tag.
+            </li>
+            <li>
+                <strong>Test on Another Device:</strong> Some devices may have NFC compatibility issues.
+            </li>
+            <li>
+                <strong>Use the APDU Tool:</strong> Manually verify the tag's data using custom APDU commands.
+            </li>
+        </ul>
+    </div>
+</div>
+
+<div id="testModal" class="modal">
+    <div class="modal-content animate__animated animate__fadeIn">
+        <h2 id="testModalTitle">TESTING TAG</h2>
+        <p id="testModalText">Hold the cloned tag near the device...</p>
+        <div class="progress-bar">
+            <div class="progress-fill" id="testProgress"></div>
+        </div>
+        <button id="cancelTestBtn" class="modal-btn">
+            <i class="fas fa-times"></i> CANCEL
+        </button>
+    </div>
+</div>
+
+<style>
+    .test-container {
+        padding: 15px;
+    }
+    
+    .test-description {
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+    
+    .test-steps {
+        background-color: var(--bg-darker);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .test-steps h3 {
+        color: var(--text-info);
+        margin-bottom: 10px;
+    }
+    
+    .test-steps ol {
+        color: var(--text-secondary);
+        margin-left: 20px;
+    }
+    
+    .test-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .test-results {
+        background-color: var(--bg-darker);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 15px;
+    }
+    
+    .test-results h3 {
+        color: var(--text-info);
+        margin-bottom: 10px;
+    }
+    
+    .test-result-container {
+        min-height: 100px;
+    }
+    
+    .test-placeholder {
+        color: var(--text-secondary);
+        font-style: italic;
+    }
+    
+    .test-troubleshooting {
+        margin-top: 20px;
+        background-color: rgba(255, 255, 0, 0.05);
+        border: 1px solid var(--warning-color);
+        border-radius: 5px;
+        padding: 15px;
+    }
+    
+    .test-troubleshooting h3 {
+        color: var(--text-warning);
+        margin-bottom: 10px;
+    }
+    
+    .test-troubleshooting ul {
+        color: var(--text-secondary);
+        margin-left: 20px;
+        line-height: 1.5;
+    }
+    
+    .test-troubleshooting strong {
+        color: var(--text-primary);
+    }
+    
+    .test-result {
+        margin-top: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        display: none;
+    }
+    
+    .test-result.success {
+        background-color: rgba(0, 255, 0, 0.1);
+        border: 1px solid var(--success-color);
+        color: var(--success-color);
+        display: block;
+    }
+    
+    .test-result.error {
+        background-color: rgba(255, 0, 0, 0.1);
+        border: 1px solid var(--error-color);
+        color: var(--error-color);
+        display: block;
+    }
+    
+    .test-result-item {
+        margin: 5px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .test-result-item i {
+        font-size: 12px;
+    }
+    
+    .test-result-item.success i {
+        color: var(--success-color);
+    }
+    
+    .test-result-item.error i {
+        color: var(--error-color);
+    }
+    
+    .test-result-item.warning i {
+        color: var(--warning-color);
+    }
+</style>
+
+<script>
+    // Test Tag Functionality
+    document.getElementById("testTagBtn").addEventListener("click", startTagTest);
+    document.getElementById("clearTestBtn").addEventListener("click", clearTestResults);
+    document.getElementById("cancelTestBtn").addEventListener("click", cancelTagTest);
+    
+    let testReader;
+    
+    function startTagTest() {
+        showTestModal("Testing Tag...");
+        updateTestProgress(10);
+        
+        if (!('NDEFReader' in window)) {
+            showTestError("WebNFC not supported in this browser.");
+            return;
+        }
+        
+        testReader = new NDEFReader();
+        testReader.scan()
+            .then(() => {
+                updateTestProgress(30);
+                logMessage("[TEST] Scanning for tag...", "info");
+                
+                testReader.onreading = async (event) => {
+                    const tag = event.tag;
+                    updateTestProgress(50);
+                    logMessage(`[TEST] Tag detected (UID: ${arrayToHex(tag.id)})`, "info");
+                    
+                    try {
+                        // Test if tag is NTAG215/216
+                        updateTestProgress(60);
+                        const isValidTag = await checkTagType(tag);
+                        if (!isValidTag) {
+                            showTestError("Tag is not NTAG215/216. Use a compatible tag.");
+                            return;
+                        }
+                        
+                        // Test if tag contains EMV data
+                        updateTestProgress(70);
+                        const hasEMVData = await checkEMVData(tag);
+                        if (!hasEMVData) {
+                            showTestError("Tag does not contain valid EMV data. Re-clone the card.");
+                            return;
+                        }
+                        
+                        // Test if tag is payment-ready
+                        updateTestProgress(80);
+                        const isPaymentReady = await checkPaymentReady(tag);
+                        if (!isPaymentReady) {
+                            showTestWarning("Tag contains EMV data but may not work on all terminals.");
+                            return;
+                        }
+                        
+                        // Success!
+                        updateTestProgress(100);
+                        showTestSuccess("Tag is payment-ready!");
+                    } catch (error) {
+                        showTestError(`Test failed: ${error}`);
+                    } finally {
+                        testReader.stopScan();
+                        hideTestModal();
+                    }
+                };
+            })
+            .catch((error) => {
+                showTestError(`Scan error: ${error}`);
+                hideTestModal();
+            });
+    }
+    
+    function cancelTagTest() {
+        if (testReader) {
+            testReader.stopScan();
+        }
+        hideTestModal();
+    }
+    
+    function showTestModal(message) {
+        document.getElementById("testModal").style.display = "flex";
+        document.getElementById("testModalText").textContent = message;
+        document.getElementById("testProgress").style.width = "0%";
+    }
+    
+    function hideTestModal() {
+        document.getElementById("testModal").style.display = "none";
+    }
+    
+    function updateTestProgress(percent) {
+        document.getElementById("testProgress").style.width = `${percent}%`;
+    }
+    
+    function showTestSuccess(message) {
+        const resultsContainer = document.getElementById("testResultContainer");
+        resultsContainer.innerHTML = `
+            <div class="test-result success">
+                <div class="test-result-item success">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>SUCCESS:</strong> ${message}
+                </div>
+                <div class="test-result-item success">
+                    <i class="fas fa-credit-card"></i>
+                    <strong>Tag Type:</strong> NTAG215/216 ✅
+                </div>
+                <div class="test-result-item success">
+                    <i class="fas fa-database"></i>
+                    <strong>EMV Data:</strong> Present ✅
+                </div>
+                <div class="test-result-item success">
+                    <i class="fas fa-shopping-cart"></i>
+                    <strong>Payment-Ready:</strong> Yes ✅
+                </div>
+            </div>
+            <p style="margin-top: 15px; color: var(--text-secondary);">
+                <strong>Next Steps:</strong> Try tapping the tag on a POS terminal.
+            </p>
+        `;
+    }
+    
+    function showTestWarning(message) {
+        const resultsContainer = document.getElementById("testResultContainer");
+        resultsContainer.innerHTML = `
+            <div class="test-result warning">
+                <div class="test-result-item warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>WARNING:</strong> ${message}
+                </div>
+                <div class="test-result-item success">
+                    <i class="fas fa-credit-card"></i>
+                    <strong>Tag Type:</strong> NTAG215/216 ✅
+                </div>
+                <div class="test-result-item success">
+                    <i class="fas fa-database"></i>
+                    <strong>EMV Data:</strong> Present ✅
+                </div>
+                <div class="test-result-item warning">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <strong>Payment-Ready:</strong> Maybe ⚠️
+                </div>
+            </div>
+            <p style="margin-top: 15px; color: var(--text-secondary);">
+                <strong>Next Steps:</strong> Try tapping the tag on a POS terminal. If it fails, use the APDU tool to debug.
+            </p>
+        `;
+    }
+    
+    function showTestError(message) {
+        const resultsContainer = document.getElementById("testResultContainer");
+        resultsContainer.innerHTML = `
+            <div class="test-result error">
+                <div class="test-result-item error">
+                    <i class="fas fa-times-circle"></i>
+                    <strong>ERROR:</strong> ${message}
+                </div>
+            </div>
+            <p style="margin-top: 15px; color: var(--text-secondary);">
+                <strong>Next Steps:</strong> Check the troubleshooting section below.
+            </p>
+        `;
+    }
+    
+    function clearTestResults() {
+        const resultsContainer = document.getElementById("testResultContainer");
+        resultsContainer.innerHTML = '<p class="test-placeholder">No test results yet. Test a tag to see results.</p>';
+    }
+    
+    // Check if tag is NTAG215/216
+    async function checkTagType(tag) {
+        try {
+            // Send GET_ATQA command (not standard in WebNFC, but we can infer from UID)
+            const uid = arrayToHex(tag.id);
+            // NTAG215/216 typically have 7-byte UIDs
+            if (uid.length >= 14) { // 7 bytes = 14 hex chars
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error checking tag type:", error);
+            return false;
+        }
+    }
+    
+    // Check if tag contains EMV data
+    async function checkEMVData(tag) {
+        try {
+            // Try to select PPSE
+            const ppse = await sendAPDU(tag, "00A404000E325041592E5359532E4444463031");
+            if (ppse && ppse.length > 0) {
+                return true;
+            }
+            return false;
+        } catch (error) {
+            return false;
+        }
+    }
+    
+    // Check if tag is payment-ready
+    async function checkPaymentReady(tag) {
+        try {
+            // Check for PAN
+            const pan = await sendAPDU(tag, "80CA9F5A00");
+            if (!pan || pan.length < 2) return false;
+            
+            // Check for expiry
+            const expiry = await sendAPDU(tag, "80CA9F2400");
+            if (!expiry || expiry.length < 2) return false;
+            
+            // If both PAN and expiry are present, assume it's payment-ready
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+    
+    // Helper: Send APDU command
+    async function sendAPDU(tag, apduHex) {
+        const apdu = hexToBytes(apduHex);
+        const response = await tag.transceive(apdu);
+        if (response.length < 2) {
+            throw new Error(`APDU ${apduHex} failed`);
+        }
+        // Check for error (SW1=0x90, SW2=0x00 means success)
+        if (response[response.length - 2] !== 0x90 || response[response.length - 1] !== 0x00) {
+            throw new Error(`APDU ${apduHex} returned error: ${arrayToHex(response.slice(-2))}`);
+        }
+        return response.slice(0, -2); // Remove SW1/SW2
+    }
+    
+    // Helper: Hex to Bytes
+    function hexToBytes(hex) {
+        return new Uint8Array(hex.match(/.{1,2}/g).map(h => parseInt(h, 16)));
+    }
+    
+    // Helper: Array to Hex
+    function arrayToHex(arr) {
+        return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join(' ');
+    }
+</script>

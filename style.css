@@ -1,0 +1,639 @@
+:root {
+    --bg-dark: #0a0a0a;
+    --bg-darker: #000000;
+    --text-primary: #00ff00;
+    --text-secondary: #00aa00;
+    --text-error: #ff0000;
+    --text-warning: #ffff00;
+    --text-info: #00aaff;
+    --border-color: #333333;
+    --accent-color: #ff00ff;
+    --success-color: #00ff00;
+    --error-color: #ff0000;
+    --warning-color: #ffff00;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Share Tech Mono', monospace;
+    background-color: var(--bg-darker);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+.loading-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--bg-darker);
+    color: var(--text-primary);
+    z-index: 10000;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.spinner {
+    margin-bottom: 20px;
+}
+
+.bounce1, .bounce2, .bounce3 {
+    width: 20px;
+    height: 20px;
+    background-color: var(--text-primary);
+    border-radius: 100%;
+    display: inline-block;
+    margin: 0 5px;
+    animation: sk-bouncedelay 1.4s infinite ease-in-out both;
+}
+
+.bounce1 {
+    animation-delay: -0.32s;
+}
+
+.bounce2 {
+    animation-delay: -0.16s;
+}
+
+@keyframes sk-bouncedelay {
+    0%, 80%, 100% {
+        transform: scale(0);
+    } 40% {
+        transform: scale(1);
+    }
+}
+
+#appContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--bg-dark);
+}
+
+.terminal-header {
+    background-color: var(--bg-darker);
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    height: 50px;
+}
+
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-title {
+    color: var(--text-error);
+    font-weight: bold;
+    font-size: 18px;
+    letter-spacing: 2px;
+}
+
+.header-subtitle {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.terminal-nav {
+    background-color: var(--bg-darker);
+    padding: 5px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+}
+
+.nav-btn {
+    background-color: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    white-space: nowrap;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.nav-btn.active {
+    background-color: var(--text-primary);
+    color: var(--bg-dark);
+    border-color: var(--text-primary);
+}
+
+.terminal-body {
+    flex: 1;
+    overflow: auto;
+    padding: 15px;
+    background-color: var(--bg-dark);
+}
+
+.log-container {
+    height: 100%;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.log-entry {
+    font-size: 12px;
+    margin: 2px 0;
+    padding: 5px 10px;
+    border-radius: 3px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    border-left: 3px solid;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.log-entry.system {
+    color: var(--text-info);
+    border-left-color: var(--text-info);
+}
+
+.log-entry.success {
+    color: var(--text-primary);
+    border-left-color: var(--success-color);
+    background-color: rgba(0, 255, 0, 0.05);
+}
+
+.log-entry.error {
+    color: var(--text-error);
+    border-left-color: var(--error-color);
+    background-color: rgba(255, 0, 0, 0.05);
+}
+
+.log-entry.warning {
+    color: var(--text-warning);
+    border-left-color: var(--warning-color);
+    background-color: rgba(255, 255, 0, 0.05);
+}
+
+.log-entry.data {
+    color: var(--text-secondary);
+    border-left-color: var(--text-secondary);
+}
+
+.log-entry.apdu {
+    color: var(--accent-color);
+    border-left-color: var(--accent-color);
+    background-color: rgba(255, 0, 255, 0.05);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#commandInput {
+    flex: 1;
+    background-color: var(--bg-darker);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#commandInput:focus {
+    border-color: var(--text-primary);
+}
+
+.btn {
+    background-color: var(--bg-darker);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-primary {
+    background-color: var(--text-primary);
+    color: var(--bg-dark);
+    border-color: var(--text-primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--text-secondary);
+    border-color: var(--text-secondary);
+}
+
+.btn-danger {
+    background-color: var(--text-error);
+    color: var(--bg-dark);
+    border-color: var(--text-error);
+}
+
+.btn-danger:hover {
+    background-color: #cc0000;
+    border-color: #cc0000;
+}
+
+.btn-warning {
+    background-color: var(--text-warning);
+    color: var(--bg-dark);
+    border-color: var(--text-warning);
+}
+
+.btn-warning:hover {
+    background-color: #cccc00;
+    border-color: #cccc00;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.modal-content {
+    background-color: var(--bg-dark);
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+.modal-content h2 {
+    color: var(--text-error);
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+.modal-content p {
+    color: var(--text-primary);
+    margin: 10px 0;
+}
+
+.progress-bar {
+    height: 10px;
+    background-color: var(--bg-darker);
+    border-radius: 5px;
+    margin: 15px 0;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background-color: var(--text-primary);
+    border-radius: 5px;
+    transition: width 0.3s;
+}
+
+.modal-btn {
+    background-color: var(--bg-darker);
+    color: var(--text-error);
+    border: 1px solid var(--text-error);
+    padding: 8px 16px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    transition: all 0.2s;
+}
+
+.modal-btn:hover {
+    background-color: var(--text-error);
+    color: var(--bg-dark);
+}
+
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    padding: 10px 15px;
+    border-radius: 5px;
+    border-left: 4px solid var(--text-primary);
+    font-size: 12px;
+    animation: slideIn 0.3s ease-out;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.toast.success {
+    border-left-color: var(--success-color);
+}
+
+.toast.error {
+    border-left-color: var(--error-color);
+}
+
+.toast.warning {
+    border-left-color: var(--warning-color);
+}
+
+.toast.info {
+    border-left-color: var(--text-info);
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.card-item {
+    background-color: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.card-item:hover {
+    border-color: var(--text-primary);
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+}
+
+.card-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.card-item-title {
+    color: var(--text-primary);
+    font-weight: bold;
+}
+
+.card-item-delete {
+    color: var(--text-error);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.card-item-body {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.card-item-footer {
+    margin-top: 10px;
+    font-size: 10px;
+    color: var(--text-info);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    background-color: var(--bg-darker);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    outline: none;
+}
+
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--text-primary);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+.table th, .table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table th {
+    color: var(--text-info);
+    background-color: var(--bg-darker);
+}
+
+.table tr:hover {
+    background-color: rgba(0, 255, 0, 0.05);
+}
+
+.code-block {
+    background-color: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    overflow-x: auto;
+    margin: 10px 0;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-darker);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+#guidePage {
+    padding: 15px;
+}
+
+#guidePage h1, #guidePage h2, #guidePage h3 {
+    color: var(--text-error);
+    margin-bottom: 10px;
+}
+
+#guidePage h1 {
+    font-size: 24px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+#guidePage h2 {
+    font-size: 18px;
+    margin-top: 20px;
+}
+
+#guidePage h3 {
+    font-size: 14px;
+    margin-top: 15px;
+}
+
+#guidePage p, #guidePage li {
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+#guidePage ul, #guidePage ol {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+
+#guidePage code {
+    background-color: var(--bg-darker);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--text-info);
+}
+
+#testPage .test-result {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 5px;
+    display: none;
+}
+
+#testPage .test-result.success {
+    background-color: rgba(0, 255, 0, 0.1);
+    border: 1px solid var(--success-color);
+    color: var(--success-color);
+    display: block;
+}
+
+#testPage .test-result.error {
+    background-color: rgba(255, 0, 0, 0.1);
+    border: 1px solid var(--error-color);
+    color: var(--error-color);
+    display: block;
+}
+
+#apduPage .apdu-command {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#apduPage .apdu-command input {
+    flex: 1;
+}
+
+#apduPage .apdu-response {
+    margin-top: 20px;
+    background-color: var(--bg-darker);
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+@media (max-width: 600px) {
+    .terminal-header {
+        flex-direction: column;
+        gap: 5px;
+        height: auto;
+        padding: 10px;
+    }
+
+    .header-left, .header-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .terminal-nav {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .nav-btn {
+        padding: 6px 10px;
+        font-size: 10px;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 15px;
+    }
+}

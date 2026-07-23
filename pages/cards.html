@@ -1,0 +1,702 @@
+<div class="cards-container">
+    <h2>💳 SAVED CARDS</h2>
+    <p class="cards-description">
+        View, edit, delete, or clone saved EMV card data.
+    </p>
+    
+    <div class="cards-actions">
+        <button id="refreshCardsBtn" class="btn btn-primary">
+            <i class="fas fa-sync"></i> REFRESH
+        </button>
+        <button id="addCardBtn" class="btn btn-primary">
+            <i class="fas fa-plus"></i> ADD MANUALLY
+        </button>
+        <button id="exportCardsBtn" class="btn btn-warning">
+            <i class="fas fa-file-export"></i> EXPORT
+        </button>
+        <button id="importCardsBtn" class="btn btn-warning">
+            <i class="fas fa-file-import"></i> IMPORT
+        </button>
+    </div>
+    
+    <div class="cards-filter">
+        <input type="text" id="cardsSearch" placeholder="🔍 Search cards...">
+        <button id="clearSearchBtn" class="btn btn-warning">
+            <i class="fas fa-times"></i> CLEAR
+        </button>
+    </div>
+    
+    <div id="cardsList" class="cards-grid">
+        <p class="cards-placeholder">Loading cards...</p>
+    </div>
+    
+    <div id="cardsPagination" class="cards-pagination">
+        <button id="prevPageBtn" class="btn btn-warning" disabled>
+            <i class="fas fa-chevron-left"></i> PREVIOUS
+        </button>
+        <span id="pageInfo" class="page-info">Page 1 of 1</span>
+        <button id="nextPageBtn" class="btn btn-warning" disabled>
+            <i class="fas fa-chevron-right"></i> NEXT
+        </button>
+    </div>
+</div>
+
+<!-- Add/Edit Card Modal -->
+<div id="cardModal" class="modal">
+    <div class="modal-content animate__animated animate__fadeIn" style="max-width: 500px;">
+        <h2 id="cardModalTitle">ADD NEW CARD</h2>
+        <form id="cardForm">
+            <div class="form-group">
+                <label for="cardPan">PAN (Card Number):</label>
+                <input type="text" id="cardPan" placeholder="e.g., 4111111111111111" required>
+            </div>
+            <div class="form-group">
+                <label for="cardExpiry">Expiry Date:</label>
+                <input type="text" id="cardExpiry" placeholder="e.g., 12/25" required>
+            </div>
+            <div class="form-group">
+                <label for="cardName">Cardholder Name:</label>
+                <input type="text" id="cardName" placeholder="e.g., JOHN DOE">
+            </div>
+            <div class="form-group">
+                <label for="cardCvc">CVC:</label>
+                <input type="text" id="cardCvc" placeholder="e.g., 123">
+            </div>
+            <div class="form-group">
+                <label for="cardUid">UID (Optional):</label>
+                <input type="text" id="cardUid" placeholder="e.g., A1 B2 C3 D4">
+            </div>
+            <div class="form-group">
+                <label for="cardNotes">Notes:</label>
+                <textarea id="cardNotes" placeholder="Additional notes..." rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <button type="button" id="generateTestCardBtn" class="btn btn-warning" style="margin-right: 10px;">
+                    <i class="fas fa-random"></i> GENERATE TEST CARD
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> SAVE CARD
+                </button>
+            </div>
+        </form>
+        <button id="cancelCardBtn" class="modal-btn" style="margin-top: 10px;">
+            <i class="fas fa-times"></i> CANCEL
+        </button>
+    </div>
+</div>
+
+<!-- Clone Card Modal -->
+<div id="cloneCardModal" class="modal">
+    <div class="modal-content animate__animated animate__fadeIn">
+        <h2>CLONE CARD TO TAG</h2>
+        <p id="cloneCardText">Hold NTAG215/216 tag near device to clone this card.</p>
+        <div class="progress-bar">
+            <div class="progress-fill" id="cloneProgress"></div>
+        </div>
+        <button id="cancelCloneBtn" class="modal-btn">
+            <i class="fas fa-times"></i> CANCEL
+        </button>
+    </div>
+</div>
+
+<!-- Export/Import Modal -->
+<div id="exportImportModal" class="modal">
+    <div class="modal-content animate__animated animate__fadeIn" style="max-width: 500px;">
+        <h2 id="exportImportTitle">EXPORT CARDS</h2>
+        <div id="exportData" class="code-block" style="display: none;"></div>
+        <div id="importArea" style="display: none;">
+            <div class="form-group">
+                <label for="importData">Paste exported data:</label>
+                <textarea id="importData" rows="5" placeholder="Paste JSON data here..."></textarea>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top: 15px;">
+            <button id="copyExportBtn" class="btn btn-primary" style="display: none;">
+                <i class="fas fa-copy"></i> COPY TO CLIPBOARD
+            </button>
+            <button id="downloadExportBtn" class="btn btn-primary" style="display: none;">
+                <i class="fas fa-download"></i> DOWNLOAD JSON
+            </button>
+            <button id="importBtn" class="btn btn-primary" style="display: none;">
+                <i class="fas fa-file-import"></i> IMPORT
+            </button>
+        </div>
+        <button id="cancelExportImportBtn" class="modal-btn">
+            <i class="fas fa-times"></i> CANCEL
+        </button>
+    </div>
+</div>
+
+<style>
+    .cards-container {
+        padding: 15px;
+    }
+    
+    .cards-description {
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+    
+    .cards-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .cards-filter {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .cards-filter input {
+        flex: 1;
+        background-color: var(--bg-darker);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
+        padding: 8px;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 12px;
+        outline: none;
+    }
+    
+    .cards-filter input:focus {
+        border-color: var(--text-primary);
+    }
+    
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .card-item {
+        background-color: var(--bg-darker);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .card-item:hover {
+        border-color: var(--text-primary);
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+    }
+    
+    .card-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .card-item-title {
+        color: var(--text-primary);
+        font-weight: bold;
+        font-size: 14px;
+    }
+    
+    .card-item-actions {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .card-item-action {
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 12px;
+        padding: 3px 6px;
+        border: 1px solid var(--border-color);
+        border-radius: 3px;
+        transition: all 0.2s;
+    }
+    
+    .card-item-action:hover {
+        background-color: var(--border-color);
+        color: var(--text-primary);
+    }
+    
+    .card-item-action.clone {
+        color: var(--text-info);
+        border-color: var(--text-info);
+    }
+    
+    .card-item-action.clone:hover {
+        background-color: var(--text-info);
+        color: var(--bg-dark);
+    }
+    
+    .card-item-action.edit {
+        color: var(--text-warning);
+        border-color: var(--text-warning);
+    }
+    
+    .card-item-action.edit:hover {
+        background-color: var(--text-warning);
+        color: var(--bg-dark);
+    }
+    
+    .card-item-action.delete {
+        color: var(--text-error);
+        border-color: var(--text-error);
+    }
+    
+    .card-item-action.delete:hover {
+        background-color: var(--text-error);
+        color: var(--bg-dark);
+    }
+    
+    .card-item-body {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+    }
+    
+    .card-item-body div {
+        margin: 3px 0;
+    }
+    
+    .card-item-body strong {
+        color: var(--text-primary);
+    }
+    
+    .card-item-footer {
+        font-size: 10px;
+        color: var(--text-info);
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .cards-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .page-info {
+        color: var(--text-secondary);
+        font-size: 12px;
+    }
+    
+    .cards-placeholder {
+        color: var(--text-secondary);
+        font-style: italic;
+        text-align: center;
+        grid-column: 1 / -1;
+    }
+    
+    /* Modal Forms */
+    #cardForm {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    #cardForm .form-group {
+        margin-bottom: 0;
+    }
+    
+    #cardForm .form-group:last-child {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
+    
+    #cardForm button[type="submit"] {
+        min-width: 100px;
+    }
+</style>
+
+<script>
+    // Cards Manager
+    let allCards = [];
+    let filteredCards = [];
+    let currentPage = 1;
+    const cardsPerPage = 12;
+    let currentCardId = null;
+    let cloneReader;
+    
+    // Load cards on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCards();
+        
+        // Event Listeners
+        document.getElementById("refreshCardsBtn").addEventListener("click", loadCards);
+        document.getElementById("addCardBtn").addEventListener("click", () => openCardModal(null));
+        document.getElementById("exportCardsBtn").addEventListener("click", openExportModal);
+        document.getElementById("importCardsBtn").addEventListener("click", openImportModal);
+        document.getElementById("clearSearchBtn").addEventListener("click", () => {
+            document.getElementById("cardsSearch").value = "";
+            filterCards();
+        });
+        document.getElementById("cardsSearch").addEventListener("input", filterCards);
+        document.getElementById("prevPageBtn").addEventListener("click", () => changePage(-1));
+        document.getElementById("nextPageBtn").addEventListener("click", () => changePage(1));
+        document.getElementById("cancelCardBtn").addEventListener("click", closeCardModal);
+        document.getElementById("cancelCloneBtn").addEventListener("click", cancelClone);
+        document.getElementById("cancelExportImportBtn").addEventListener("click", closeExportImportModal);
+        document.getElementById("copyExportBtn").addEventListener("click", copyExportData);
+        document.getElementById("downloadExportBtn").addEventListener("click", downloadExportData);
+        document.getElementById("importBtn").addEventListener("click", importData);
+        document.getElementById("generateTestCardBtn").addEventListener("click", generateTestCard);
+        
+        // Form submission
+        document.getElementById("cardForm").addEventListener("submit", saveCard);
+    });
+    
+    // Load cards from storage
+    async function loadCards() {
+        showLoading();
+        try {
+            allCards = await loadAllCards();
+            filteredCards = [...allCards];
+            currentPage = 1;
+            renderCards();
+            updatePagination();
+        } catch (error) {
+            showToast(`Error loading cards: ${error}`, "error");
+        } finally {
+            hideLoading();
+        }
+    }
+    
+    // Filter cards
+    function filterCards() {
+        const searchTerm = document.getElementById("cardsSearch").value.toLowerCase();
+        filteredCards = allCards.filter(card => 
+            (card.pan && card.pan.toLowerCase().includes(searchTerm)) ||
+            (card.name && card.name.toLowerCase().includes(searchTerm)) ||
+            (card.uid && card.uid.toLowerCase().includes(searchTerm)) ||
+            (card.notes && card.notes.toLowerCase().includes(searchTerm))
+        );
+        currentPage = 1;
+        renderCards();
+        updatePagination();
+    }
+    
+    // Render cards
+    function renderCards() {
+        const cardsList = document.getElementById("cardsList");
+        const startIndex = (currentPage - 1) * cardsPerPage;
+        const endIndex = startIndex + cardsPerPage;
+        const pageCards = filteredCards.slice(startIndex, endIndex);
+        
+        if (pageCards.length === 0) {
+            cardsList.innerHTML = '<p class="cards-placeholder">No cards found.</p>';
+            return;
+        }
+        
+        cardsList.innerHTML = pageCards.map(card => `
+            <div class="card-item" data-id="${card.id}">
+                <div class="card-item-header">
+                    <div class="card-item-title">${card.name || 'Unnamed Card'}</div>
+                    <div class="card-item-actions">
+                        <span class="card-item-action clone" title="Clone" onclick="cloneCard(${card.id})">
+                            <i class="fas fa-copy"></i> CLONE
+                        </span>
+                        <span class="card-item-action edit" title="Edit" onclick="openCardModal(${card.id})">
+                            <i class="fas fa-edit"></i> EDIT
+                        </span>
+                        <span class="card-item-action delete" title="Delete" onclick="deleteCard(${card.id})">
+                            <i class="fas fa-trash"></i> DELETE
+                        </span>
+                    </div>
+                </div>
+                <div class="card-item-body">
+                    <div><strong>PAN:</strong> ${card.pan ? maskPAN(card.pan) : 'N/A'}</div>
+                    <div><strong>Expiry:</strong> ${card.expiry || 'N/A'}</div>
+                    <div><strong>UID:</strong> ${card.uid || 'N/A'}</div>
+                    ${card.notes ? `<div><strong>Notes:</strong> ${card.notes}</div>` : ''}
+                </div>
+                <div class="card-item-footer">
+                    <span>${new Date(card.timestamp).toLocaleDateString()}</span>
+                    <span>${new Date(card.timestamp).toLocaleTimeString()}</span>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // Update pagination
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredCards.length / cardsPerPage);
+        document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages}`;
+        document.getElementById("prevPageBtn").disabled = currentPage === 1;
+        document.getElementById("nextPageBtn").disabled = currentPage === totalPages || totalPages === 0;
+    }
+    
+    // Change page
+    function changePage(delta) {
+        const totalPages = Math.ceil(filteredCards.length / cardsPerPage);
+        const newPage = currentPage + delta;
+        if (newPage >= 1 && newPage <= totalPages) {
+            currentPage = newPage;
+            renderCards();
+            updatePagination();
+        }
+    }
+    
+    // Open card modal
+    function openCardModal(cardId) {
+        currentCardId = cardId;
+        const modal = document.getElementById("cardModal");
+        const title = document.getElementById("cardModalTitle");
+        
+        if (cardId) {
+            // Edit mode
+            title.textContent = "EDIT CARD";
+            loadCardById(cardId).then(card => {
+                if (card) {
+                    document.getElementById("cardPan").value = card.pan || "";
+                    document.getElementById("cardExpiry").value = card.expiry || "";
+                    document.getElementById("cardName").value = card.name || "";
+                    document.getElementById("cardCvc").value = card.cvc || "";
+                    document.getElementById("cardUid").value = card.uid || "";
+                    document.getElementById("cardNotes").value = card.notes || "";
+                }
+            });
+        } else {
+            // Add mode
+            title.textContent = "ADD NEW CARD";
+            document.getElementById("cardPan").value = "";
+            document.getElementById("cardExpiry").value = "";
+            document.getElementById("cardName").value = "";
+            document.getElementById("cardCvc").value = "";
+            document.getElementById("cardUid").value = "";
+            document.getElementById("cardNotes").value = "";
+        }
+        
+        modal.style.display = "flex";
+    }
+    
+    // Close card modal
+    function closeCardModal() {
+        document.getElementById("cardModal").style.display = "none";
+        currentCardId = null;
+    }
+    
+    // Save card
+    async function saveCard(event) {
+        event.preventDefault();
+        
+        const pan = document.getElementById("cardPan").value.trim();
+        const expiry = document.getElementById("cardExpiry").value.trim();
+        const name = document.getElementById("cardName").value.trim();
+        const cvc = document.getElementById("cardCvc").value.trim();
+        const uid = document.getElementById("cardUid").value.trim();
+        const notes = document.getElementById("cardNotes").value.trim();
+        
+        if (!pan || !expiry) {
+            showToast("PAN and Expiry are required!", "error");
+            return;
+        }
+        
+        const cardData = {
+            pan,
+            expiry,
+            name: name || null,
+            cvc: cvc || null,
+            uid: uid || generateUID(),
+            notes: notes || null,
+            timestamp: new Date().toISOString()
+        };
+        
+        try {
+            if (currentCardId) {
+                // Update existing card
+                await updateCard(currentCardId, cardData);
+            } else {
+                // Add new card
+                await saveCardData(cardData);
+            }
+            closeCardModal();
+            loadCards();
+        } catch (error) {
+            showToast(`Error saving card: ${error}`, "error");
+        }
+    }
+    
+    // Clone card
+    async function cloneCard(cardId) {
+        const card = await loadCardById(cardId);
+        if (!card) {
+            showToast("Card not found!", "error");
+            return;
+        }
+        
+        // Set current card for cloning
+        currentCardData = card;
+        
+        // Show clone modal
+        document.getElementById("cloneCardModal").style.display = "flex";
+        document.getElementById("cloneCardText").textContent = `Cloning card (PAN: ${maskPAN(card.pan)}) to NTAG215/216...`;
+        document.getElementById("cloneProgress").style.width = "0%";
+        
+        // Start cloning
+        cloneToTag();
+    }
+    
+    // Delete card
+    async function deleteCard(cardId) {
+        if (confirm("Are you sure you want to delete this card?")) {
+            try {
+                await deleteCardData(cardId);
+                loadCards();
+            } catch (error) {
+                showToast(`Error deleting card: ${error}`, "error");
+            }
+        }
+    }
+    
+    // Cancel clone
+    function cancelClone() {
+        if (cloneReader) {
+            cloneReader.stopScan();
+        }
+        document.getElementById("cloneCardModal").style.display = "none";
+        currentCardData = null;
+    }
+    
+    // Open export modal
+    async function openExportModal() {
+        const modal = document.getElementById("exportImportModal");
+        const title = document.getElementById("exportImportTitle");
+        const exportData = document.getElementById("exportData");
+        const importArea = document.getElementById("importArea");
+        const copyBtn = document.getElementById("copyExportBtn");
+        const downloadBtn = document.getElementById("downloadExportBtn");
+        const importBtn = document.getElementById("importBtn");
+        
+        title.textContent = "EXPORT CARDS";
+        exportData.style.display = "block";
+        importArea.style.display = "none";
+        copyBtn.style.display = "inline-block";
+        downloadBtn.style.display = "inline-block";
+        importBtn.style.display = "none";
+        
+        try {
+            const data = await exportCards();
+            exportData.textContent = data;
+        } catch (error) {
+            showToast(`Error exporting cards: ${error}`, "error");
+        }
+        
+        modal.style.display = "flex";
+    }
+    
+    // Open import modal
+    function openImportModal() {
+        const modal = document.getElementById("exportImportModal");
+        const title = document.getElementById("exportImportTitle");
+        const exportData = document.getElementById("exportData");
+        const importArea = document.getElementById("importArea");
+        const copyBtn = document.getElementById("copyExportBtn");
+        const downloadBtn = document.getElementById("downloadExportBtn");
+        const importBtn = document.getElementById("importBtn");
+        
+        title.textContent = "IMPORT CARDS";
+        exportData.style.display = "none";
+        importArea.style.display = "block";
+        copyBtn.style.display = "none";
+        downloadBtn.style.display = "none";
+        importBtn.style.display = "inline-block";
+        
+        document.getElementById("importData").value = "";
+        modal.style.display = "flex";
+    }
+    
+    // Close export/import modal
+    function closeExportImportModal() {
+        document.getElementById("exportImportModal").style.display = "none";
+    }
+    
+    // Copy export data
+    function copyExportData() {
+        const data = document.getElementById("exportData").textContent;
+        navigator.clipboard.writeText(data).then(() => {
+            showToast("Copied to clipboard!", "success");
+        }).catch(() => {
+            showToast("Failed to copy to clipboard.", "error");
+        });
+    }
+    
+    // Download export data
+    function downloadExportData() {
+        const data = document.getElementById("exportData").textContent;
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `nfc-ring-cards-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    // Import data
+    async function importData() {
+        const data = document.getElementById("importData").value.trim();
+        if (!data) {
+            showToast("Please paste data to import.", "error");
+            return;
+        }
+        
+        try {
+            await importCards(data);
+            closeExportImportModal();
+            loadCards();
+        } catch (error) {
+            showToast(`Error importing cards: ${error}`, "error");
+        }
+    }
+    
+    // Generate test card
+    function generateTestCard() {
+        const testCards = [
+            { pan: "4111111111111111", expiry: "12/25", name: "Visa Test Card" },
+            { pan: "5555555555554444", expiry: "12/25", name: "Mastercard Test Card" },
+            { pan: "378282246310005", expiry: "12/25", name: "Amex Test Card" },
+            { pan: "6011111111111117", expiry: "12/25", name: "Discover Test Card" }
+        ];
+        
+        const randomIndex = Math.floor(Math.random() * testCards.length);
+        const card = testCards[randomIndex];
+        
+        document.getElementById("cardPan").value = card.pan;
+        document.getElementById("cardExpiry").value = card.expiry;
+        document.getElementById("cardName").value = card.name;
+        document.getElementById("cardCvc").value = "123";
+        document.getElementById("cardUid").value = generateUID();
+        document.getElementById("cardNotes").value = "Test card generated by NFC Ring";
+        
+        showToast("Test card generated!", "success");
+    }
+    
+    // Mask PAN for display
+    function maskPAN(pan) {
+        if (!pan || pan.length < 4) return pan;
+        return pan.slice(0, 4) + "****" + pan.slice(-4);
+    }
+    
+    // Generate random UID
+    function generateUID() {
+        const bytes = new Uint8Array(4);
+        window.crypto.getRandomValues(bytes);
+        return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
+    }
+    
+    // Show loading
+    function showLoading() {
+        document.getElementById("cardsList").innerHTML = '<p class="cards-placeholder"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+    }
+    
+    // Hide loading
+    function hideLoading() {
+        // Loading is handled by renderCards
+    }
+</script>
