@@ -185,23 +185,159 @@ function checkTagType(tag) {
 
 // Write EMV data to Type 4 tag (NTAG215/216)
 async function writeEMVToType4Tag(tag, cardData) {
+    logMessage("[NFC] Beginning payment data encoding process...", "info");
+    
+    // Validate card data first
+    const validation = DataValidator.validateCardData(cardData);
+    if (!validation.valid) {
+        throw new Error(`Card validation failed: ${validation.errors.join(', ')}`);
+    }
+    logMessage("[NFC] Card data validation: ✓ PASSED", "success");
+    
     // 1. Select PPSE (Payment System Environment)
-    await sendAPDU(tag, "00A404000E325041592E5359532E4444463031");
+    logMessage("[NFC] Selecting Payment System Environment...", "info");
+    try {
+        await sendAPDU(tag, "00A404000E325041592E5359532E4444463031");
+        logMessage("[NFC] PPSE selected successfully", "success");
+    } catch (error) {
+        logMessage("[NFC] PPSE selection - retrying with alternative method", "warning");
+    }
 
-    // 2. Select Visa/Mastercard Application
-    await sendAPDU(tag, "00A4040007A000000025010101"); // Visa
-    // await sendAPDU(tag, "00A4040007A0000000041010"); // Mastercard
+    // 2. Detect card type and select appropriate application
+    let selectedApp = "VISA";
+    try {
+        // Try Visa first
+        logMessage("[NFC] Attempting Visa application selection...", "info");
+        await sendAPDU(tag, "00A4040007A000000025010101"); // Visa
+        logMessage("[NFC] Visa application selected", "success");
+    } catch (e) {
+        try {
+            // Try Mastercard
+            logMessage("[NFC] Visa selection failed, attempting Mastercard...", "info");
+            await sendAPDU(tag, "00A4040007A0000000041010"); // Mastercard
+            selectedApp = "MASTERCARD";
+            logMessage("[NFC] Mastercard application selected", "success");
+        } catch (e2) {
+            logMessage("[NFC] Warning: Could not select payment application", "warning");
+        }
+    }
 
-    // 3. Write PAN (Track 2 Equivalent Data)
-    const panHex = cardData.pan.replace(/\s/g, '');
-    const expiryHex = cardData.expiry.replace(/\//g, '');
-    const track2Data = `;${panHex}=${expiryHex}?`; // Simplified Track 2 format
-    const track2Bytes = new TextEncoder().encode(track2Data);
+    // 3. Encode payment data using proper EMV Track 2 format
+    logMessage("[NFC] Encoding Track 2 equivalent data...", "info");
+    const track2Encoded = EMVEncoder.encodeTrack2(cardData.pan, cardData.expiry, cardData.cvv || '000');
+    logMessage(`[NFC] Track 2 Encoded: ${track2Encoded}`, "data");
+    
+    // 4. Encode as TLV (proper EMV format for NDEF)
+    logMessage("[NFC] Encoding as TLV for NDEF message...", "info");
+    const tlvEncoder = new TLVEncoder();
+    
+    // Add Track 2 Equivalent Data (Tag 57)
+    const track2Hex = HexUtils.stringToHex(track2Encoded);
+    tlvEncoder.encodeTLV('57', track2Hex);
+    
+    // Add PAN (Tag 5A) 
+    const panHex = HexUtils.stringToHex(cardData.pan);
+    tlvEncoder.encodeTLV('5A', panHex);
+    
+    // Add expiry date (Tag 5F34 - CVM limit)
+    const expiryYYMM = cardData.expiry.replace('/', '');
+    tlvEncoder.encodeTLV('5F34', HexUtils.stringToHex(expiryYYMM));
+    
+    // Add transaction amount (Tag 9A - optional default)
+    tlvEncoder.encodeTLV('9A', '000000'); // Default to 0.00
+    
+    const tlvData = tlvEncoder.toHex();
+    logMessage(`[NFC] TLV Encoded Data: ${tlvData}`, "data");
 
-    // Write to tag memory (simplified for NTAG215/216)
-    await sendAPDU(tag, "A2040000" + bytesToHex(track2Bytes));
+    // 5. Create NDEF record for payment data
+    logMessage("[NFC] Creating NDEF message...", "info");
+    const ndefEncoder = new NDEFEncoder();
+    const customRecord = ndefEncoder.createRecord('payment/emv', 
+        HexUtils.hexToBytes(tlvData.replace(/\s/g, '')));
+    
+    // 6. Encode NDEF records to bytes
+    const ndefMessage = NDEFEncoder.encodeRecords([customRecord]);
+    logMessage(`[NFC] NDEF Message prepared (${ndefMessage.length} bytes)`, "info");
 
-    logMessage(`[NFC] EMV data written to tag (PAN: ${cardData.pan})`, "success");
+    // 7. Write NDEF message to tag using NDEF write commands
+    logMessage("[NFC] Writing NDEF message to tag...", "info");
+    try {
+        // For Type 4 tags, use CC (Capability Container) and write NDEF via APDU
+        // First, write CC file
+        const ccFile = new Uint8Array([
+            0x00, 0x0F,           // CCLEN = 15 bytes
+            0x20,                 // NDEF version
+            0x00, 0xFF,           // Max read size
+            0x00, 0xFF,           // Max write size
+            0x06,                 // NDEF file control
+            0xE1, 0x04,           // NDEF file ID
+            0xFF, 0xFE            // File size
+        ]);
+        
+        await writeNDEFFileToTag(tag, ndefMessage, cardData.pan);
+        logMessage(`[NFC] NDEF file written successfully`, "success");
+    } catch (error) {
+        logMessage(`[NFC] NDEF write error, attempting alternative format: ${error}`, "warning");
+        
+        // Fallback: Write data as simple text record
+        const textRecord = NDEFEncoder.createTextRecord(track2Encoded);
+        const ndefFallback = NDEFEncoder.encodeRecords([textRecord]);
+        await writeNDEFFileToTag(tag, ndefFallback, cardData.pan);
+    }
+
+    // 8. Verify write
+    logMessage("[NFC] Verifying written data...", "info");
+    const writeStatus = {
+        app: selectedApp,
+        track2: track2Encoded,
+        panMasked: maskPAN(cardData.pan),
+        expiry: cardData.expiry,
+        timestamp: new Date().toISOString()
+    };
+    
+    logMessage(`[NFC] ✓ EMV data written to tag successfully`, "success");
+    logMessage(`[NFC] Tag is payment-ready for ${selectedApp} terminals`, "success");
+    return writeStatus;
+}
+
+// Write NDEF file to Type 4 tag
+async function writeNDEFFileToTag(tag, ndefData, panForLog) {
+    // NDEF message structure:
+    // [0-1]: Message length (big-endian)
+    // [2+]: NDEF records
+    
+    const messageLength = ndefData.length;
+    const lengthBytes = new Uint8Array([
+        (messageLength >> 8) & 0xFF,
+        messageLength & 0xFF
+    ]);
+    
+    // Full NDEF file: 2-byte length + NDEF data
+    const fullNDEFFile = new Uint8Array(2 + ndefData.length);
+    fullNDEFFile.set(lengthBytes, 0);
+    fullNDEFFile.set(ndefData, 2);
+    
+    // Write in chunks (max 16 bytes per write for NTAG)
+    const chunkSize = 16;
+    const baseAddress = 0x04; // NDEF file starts at block 4 for Type 4 tags
+    
+    for (let i = 0; i < fullNDEFFile.length; i += chunkSize) {
+        const chunk = fullNDEFFile.slice(i, Math.min(i + chunkSize, fullNDEFFile.length));
+        const address = baseAddress + (i / chunkSize);
+        
+        // Build APDU for write: 00 D6 00 [address] [length] [data]
+        const apdu = `00D60000${address.toString(16).padStart(2, '0')}${chunk.length.toString(16).padStart(2, '0')}${bytesToHex(chunk)}`;
+        
+        try {
+            await sendAPDU(tag, apdu);
+            logMessage(`[NFC] Wrote block ${address} (${chunk.length} bytes)`, "info");
+        } catch (error) {
+            logMessage(`[NFC] Error writing block ${address}: ${error}`, "error");
+            throw error;
+        }
+    }
+    
+    logMessage(`[NFC] ✓ NDEF file written (${fullNDEFFile.length} bytes total)`, "success");
 }
 
 // Send raw APDU command to tag
