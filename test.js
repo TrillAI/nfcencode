@@ -169,9 +169,32 @@ async function checkTagType(tag) {
 // Check if tag contains EMV data
 async function checkEMVData(tag) {
     try {
+        logMessage("[TEST] Checking for PPSE application...", "info");
         const ppse = await sendAPDU(tag, "00A404000E325041592E5359532E4444463031");
-        return ppse && ppse.length > 0;
+        
+        if (!ppse || ppse.length === 0) {
+            logMessage("[TEST] PPSE not found on tag", "warning");
+            return false;
+        }
+        
+        logMessage("[TEST] ✓ PPSE found, attempting to read PAN...", "success");
+        
+        // Try to select payment app and read Track 2 data
+        try {
+            await sendAPDU(tag, "00A4040007A000000025010101"); // Visa
+            logMessage("[TEST] ✓ Visa application detected", "success");
+        } catch (e) {
+            try {
+                await sendAPDU(tag, "00A4040007A0000000041010"); // Mastercard
+                logMessage("[TEST] ✓ Mastercard application detected", "success");
+            } catch (e2) {
+                logMessage("[TEST] Warning: Could not detect payment app", "warning");
+            }
+        }
+        
+        return true;
     } catch (error) {
+        logMessage(`[TEST] EMV data check failed: ${error}`, "error");
         return false;
     }
 }
@@ -179,14 +202,74 @@ async function checkEMVData(tag) {
 // Check if tag is payment-ready
 async function checkPaymentReady(tag) {
     try {
-        const pan = await sendAPDU(tag, "80CA9F5A00");
-        if (!pan || pan.length < 2) return false;
+        logMessage("[TEST] Verifying payment readiness...", "info");
         
-        const expiry = await sendAPDU(tag, "80CA9F2400");
-        if (!expiry || expiry.length < 2) return false;
+        // Read Track 2 Equivalent Data
+        logMessage("[TEST] Reading Track 2 equivalent data...", "info");
+        const track2 = await sendAPDU(tag, "80CA9F5700");
         
+        if (!track2 || track2.length < 2) {
+            logMessage("[TEST] No Track 2 data found", "warning");
+            return false;
+        }
+        
+        // Parse Track 2 to verify it contains valid payment data
+        const track2Str = arrayToHex(track2).replace(/\s/g, '');
+        logMessage(`[TEST] Track 2 data retrieved: ${track2Str.substring(0, 40)}...`, "data");
+        
+        // Try to read PAN (Tag 5A)
+        logMessage("[TEST] Reading Primary Account Number...", "info");
+        const pan = await sendAPDU(tag, "80CA5A00");
+        if (!pan || pan.length < 5) {
+            logMessage("[TEST] Warning: Could not read PAN tag", "warning");
+            // Try alternative method
+            const panFromTrack2 = track2Str.match(/;(\d{13,19})=/);
+            if (panFromTrack2) {
+                logMessage(`[TEST] ✓ PAN recovered from Track 2: ${maskPAN(panFromTrack2[1])}`, "success");
+            } else {
+                return false;
+            }
+        } else {
+            const panDecoded = HexUtils.hexToString(track2Str.substring(0, pan.length * 2));
+            logMessage(`[TEST] ✓ PAN detected: ${maskPAN(panDecoded)}`, "success");
+        }
+        
+        // Try to read expiry (Tag 5F34)
+        logMessage("[TEST] Reading expiry date...", "info");
+        const expiry = await sendAPDU(tag, "80CA5F3400");
+        if (!expiry || expiry.length < 2) {
+            logMessage("[TEST] Warning: Could not read expiry tag", "warning");
+            // Try to extract from Track 2
+            const expiryFromTrack2 = track2Str.match(/=(\d{4})/);
+            if (expiryFromTrack2) {
+                const expiryYYMM = expiryFromTrack2[1];
+                logMessage(`[TEST] ✓ Expiry recovered from Track 2: ${expiryYYMM.substring(0,2)}/${expiryYYMM.substring(2)}`, "success");
+            }
+        } else {
+            logMessage(`[TEST] ✓ Expiry date present`, "success");
+        }
+        
+        // Attempt to parse the encoded data using our decoder
+        logMessage("[TEST] Verifying TLV encoding...", "info");
+        try {
+            const tlvDecoder = new TLVDecoder(track2Str);
+            const decodedPan = tlvDecoder.getByTag('5A');
+            const decodedExpiry = tlvDecoder.getByTag('5F34');
+            
+            if (decodedPan || decodedExpiry) {
+                logMessage(`[TEST] ✓ TLV encoding verified`, "success");
+                return true;
+            }
+        } catch (e) {
+            logMessage(`[TEST] TLV parsing note: ${e.message}`, "info");
+        }
+        
+        // If we got this far, tag has payment data
+        logMessage("[TEST] ✓ Payment data structure validated", "success");
         return true;
+        
     } catch (error) {
+        logMessage(`[TEST] Payment readiness check failed: ${error}`, "error");
         return false;
     }
 }

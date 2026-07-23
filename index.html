@@ -3,14 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="NFC RING - Advanced NFC encoding and tag management">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="NFC RING">
     <title>💀 NFC RING 💀</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><text y='170' font-size='160' fill='%23ff00ff'>💀</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><text y='170' font-size='160' fill='%23ff00ff'>💀</text></svg>">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- External Libraries -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@webnfc/webnfc@0.1.0/dist/webnfc.min.js"></script>
+    <!-- Encoding Libraries -->
+    <script src="encoding.js"></script>
+    <script src="encoding-tests.js"></script>
 </head>
 <body>
     <div id="loadingScreen" class="loading-screen">
@@ -31,6 +42,9 @@
                 <span class="header-subtitle" id="connectionStatus">[OFFLINE]</span>
                 <span class="header-subtitle" id="nfcStatus">[NFC: CHECKING...]</span>
                 <span class="header-subtitle" id="timeDisplay"></span>
+                <button class="header-btn" id="installBtn" title="Install App" style="display: none;">
+                    <i class="fas fa-download"></i>
+                </button>
             </div>
         </div>
 
@@ -58,11 +72,46 @@
 
     <div id="toastContainer" class="toast-container"></div>
 
+    <!-- Core App Scripts -->
     <script src="storage.js"></script>
     <script src="nfc.js"></script>
     <script src="autofill.js"></script>
     <script src="test.js"></script>
     <script src="apdu.js"></script>
     <script src="app.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        // Register service worker for PWA support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('[PWA] Service Worker registered:', registration);
+                    })
+                    .catch(error => {
+                        console.error('[PWA] Service Worker registration failed:', error);
+                    });
+            });
+        }
+
+        // Handle install prompt
+        let installPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            installPrompt = e;
+            document.getElementById('installBtn').style.display = 'inline-block';
+        });
+
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (installPrompt) {
+                installPrompt.prompt();
+                const { outcome } = await installPrompt.userChoice;
+                console.log(`[PWA] Installation ${outcome}`);
+                installPrompt = null;
+                document.getElementById('installBtn').style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>

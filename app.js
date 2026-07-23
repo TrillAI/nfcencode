@@ -114,8 +114,26 @@ function loadPage(page) {
 function initHomePage() {
     const commandInput = document.getElementById("commandInput");
     if (commandInput) {
+        commandInput.addEventListener("keydown", async (event) => {
+            if (event.key === "Enter") {
+                const command = commandInput.value.trim().toLowerCase();
+                commandInput.value = "";
+                
+                if (command) {
+                    await processCommand(command);
+                }
+            }
+        });
         commandInput.focus();
     }
+
+    // Set up quick-start buttons
+    document.querySelectorAll(".quick-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const action = btn.dataset.action;
+            handleQuickStart(action);
+        });
+    });
 }
 
 // Initialize test page
@@ -173,6 +191,21 @@ async function processCommand(command) {
         case "manual":
             openCardModal(null);
             break;
+        case "verify":
+            verifyEncoding();
+            break;
+        case "test-tlv":
+            testTLVCommand();
+            break;
+        case "test-validation":
+            testValidationCommand();
+            break;
+        case "test-emv":
+            testEMVCommand();
+            break;
+        case "encode-sample":
+            encodeSampleCard();
+            break;
         default:
             logMessage(`[ERROR] Unknown command: ${command}`, "error");
             logMessage("Type 'help' for available commands.", "info");
@@ -182,16 +215,170 @@ async function processCommand(command) {
 // Show help
 function showHelp() {
     logMessage("[HELP] Available commands:", "info");
+    logMessage("", "system");
+    logMessage("=== NFC OPERATIONS ===", "info");
     logMessage("  - scan: Scan an EMV card", "info");
     logMessage("  - clone: Clone card data to NTAG215/216", "info");
     logMessage("  - test: Test a cloned tag", "info");
-    logMessage("  - autofill on: Enable auto-fill for payment forms", "info");
-    logMessage("  - autofill off: Disable auto-fill", "info");
+    logMessage("", "system");
+    logMessage("=== CARD MANAGEMENT ===", "info");
     logMessage("  - list: List all saved cards", "info");
     logMessage("  - generate: Generate a test card for encoding", "info");
     logMessage("  - manual: Manually enter card data", "info");
+    logMessage("", "system");
+    logMessage("=== ENCODING & VERIFICATION ===", "info");
+    logMessage("  - verify: Run all encoding verification tests", "info");
+    logMessage("  - test-tlv: Test TLV encoding/decoding", "info");
+    logMessage("  - test-emv: Test EMV track encoding", "info");
+    logMessage("  - test-validation: Test data validation", "info");
+    logMessage("  - encode-sample: Encode and display sample card data", "info");
+    logMessage("", "system");
+    logMessage("=== UTILITIES ===", "info");
+    logMessage("  - autofill on|off: Enable/disable auto-fill for payment forms", "info");
     logMessage("  - clear: Clear the terminal log", "info");
     logMessage("  - help: Show this help message", "info");
+}
+
+// Handle quick-start button clicks
+function handleQuickStart(action) {
+    switch (action) {
+        case "test-nfc":
+            processCommand("test");
+            break;
+        case "read-card":
+            processCommand("scan");
+            break;
+        case "write-card":
+            processCommand("clone");
+            break;
+        case "view-guide":
+            loadPage("guide");
+            break;
+        default:
+            logMessage("[ERROR] Unknown quick-start action: " + action, "error");
+    }
+}
+
+// Verify encoding (new command)
+function verifyEncoding() {
+    logMessage("[TEST] Running comprehensive encoding verification...", "info");
+    logMessage("[TEST] This will test all encoding and validation functions", "info");
+    
+    const results = EncodingTestSuite.runAllTests();
+    const report = EncodingTestSuite.getTestReport(results);
+    
+    logMessage(report, "system");
+    
+    // Also log individual results
+    if (results.totalFailed === 0) {
+        logMessage(`[TEST] ✓ ALL TESTS PASSED (${results.totalPassed}/${results.totalTests})`, "success");
+    } else {
+        logMessage(`[TEST] ✗ SOME TESTS FAILED (${results.totalPassed}/${results.totalTests} passed)`, "error");
+    }
+    
+    return results;
+}
+
+// Test TLV encoding (new command)
+function testTLVCommand() {
+    logMessage("[TLV] Testing TLV Encoding/Decoding...", "info");
+    
+    const results = EncodingTestSuite.testTLVEncoding();
+    
+    results.tests.forEach(test => {
+        const status = test.status === 'PASS' ? '✓' : '✗';
+        const message = `[TLV] ${status} ${test.name}`;
+        logMessage(message, test.status === 'PASS' ? 'success' : 'error');
+        if (test.error) {
+            logMessage(`      Error: ${test.error}`, 'error');
+        }
+    });
+    
+    logMessage(`[TLV] Total: ${results.passed}/${results.passed + results.failed} passed`, 
+        results.failed === 0 ? 'success' : 'warning');
+}
+
+// Test data validation (new command)
+function testValidationCommand() {
+    logMessage("[VALIDATION] Testing Data Validation...", "info");
+    
+    const results = EncodingTestSuite.testDataValidation();
+    
+    results.tests.forEach(test => {
+        const status = test.status === 'PASS' ? '✓' : '✗';
+        const message = `[VALIDATION] ${status} ${test.name}`;
+        logMessage(message, test.status === 'PASS' ? 'success' : 'error');
+        if (test.error) {
+            logMessage(`            Error: ${test.error}`, 'error');
+        }
+    });
+    
+    logMessage(`[VALIDATION] Total: ${results.passed}/${results.passed + results.failed} passed`, 
+        results.failed === 0 ? 'success' : 'warning');
+}
+
+// Test EMV encoding (new command)
+function testEMVCommand() {
+    logMessage("[EMV] Testing EMV Track Encoding...", "info");
+    
+    const results = EncodingTestSuite.testEMVEncoding();
+    
+    results.tests.forEach(test => {
+        const status = test.status === 'PASS' ? '✓' : '✗';
+        const message = `[EMV] ${status} ${test.name}`;
+        logMessage(message, test.status === 'PASS' ? 'success' : 'error');
+        if (test.data) {
+            logMessage(`       Data: ${test.data}`, 'data');
+        }
+        if (test.error) {
+            logMessage(`      Error: ${test.error}`, 'error');
+        }
+    });
+    
+    logMessage(`[EMV] Total: ${results.passed}/${results.passed + results.failed} passed`, 
+        results.failed === 0 ? 'success' : 'warning');
+}
+
+// Encode sample card data (new command)
+function encodeSampleCard() {
+    logMessage("[ENCODE] Encoding sample card data...", "info");
+    
+    try {
+        const testCard = {
+            pan: '4111111111111111',
+            expiry: '12/26',
+            cvv: '123'
+        };
+        
+        // Validate first
+        const validation = DataValidator.validateCardData(testCard);
+        
+        if (!validation.valid) {
+            logMessage(`[ENCODE] Validation failed: ${validation.errors.join(', ')}`, 'error');
+            return;
+        }
+        
+        logMessage('[ENCODE] Card data validation: ✓ PASSED', 'success');
+        
+        // Encode Track 1
+        const track1 = EMVEncoder.encodeTrack1(testCard.pan, testCard.expiry, 'SAMPLE/USER');
+        logMessage(`[ENCODE] Track 1: ${track1}`, 'data');
+        
+        // Encode Track 2
+        const track2 = EMVEncoder.encodeTrack2(testCard.pan, testCard.expiry, testCard.cvv);
+        logMessage(`[ENCODE] Track 2: ${track2}`, 'data');
+        
+        // Encode as TLV
+        const tlvEncoder = new TLVEncoder();
+        tlvEncoder.encodeTLV('5A', HexUtils.stringToHex(testCard.pan));
+        tlvEncoder.encodeTLV('5F24', HexUtils.stringToHex(testCard.expiry.replace('/', '')));
+        
+        logMessage(`[ENCODE] TLV Hex: ${tlvEncoder.toHex()}`, 'data');
+        logMessage('[ENCODE] ✓ Encoding successful', 'success');
+        
+    } catch (error) {
+        logMessage(`[ENCODE] Error: ${error.message}`, 'error');
+    }
 }
 
 // List all saved cards
